@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { api } from '../lib/api';
-import { FileText, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { FileText, Plus, X, Edit2, Trash2, ExternalLink } from 'lucide-react';
 
 interface Document {
     id: string;
@@ -9,6 +9,7 @@ interface Document {
     documentDate: string | null;
     documentType: string;
     documentStatus: string;
+    documentLink: string | null;
     amount: number | null;
     paid: boolean | null;
     projectId: string;
@@ -38,6 +39,7 @@ export function Documents() {
         documentDate: '',
         documentType: 'OTHERS',
         documentStatus: 'NOT_SUBMITTED',
+        documentLink: '',
         amount: '',
         paid: '',
     });
@@ -70,6 +72,7 @@ export function Documents() {
             documentDate: '',
             documentType: 'OTHERS',
             documentStatus: 'NOT_SUBMITTED',
+        documentLink: '',
             amount: '',
             paid: '',
         });
@@ -85,6 +88,7 @@ export function Documents() {
             documentDate: doc.documentDate ? doc.documentDate.split('T')[0] : '',
             documentType: doc.documentType,
             documentStatus: doc.documentStatus,
+      documentLink: doc.documentLink || '',
             amount: doc.amount !== null ? String(doc.amount) : '',
             paid: doc.paid !== null ? String(doc.paid) : '',
         });
@@ -109,6 +113,7 @@ export function Documents() {
 
             if (formData.documentId) data.documentId = formData.documentId;
             if (formData.documentDate) data.documentDate = formData.documentDate;
+      if (formData.documentLink) data.documentLink = formData.documentLink;
 
             // Only include invoice fields if type is INVOICE
             if (formData.documentType === 'INVOICE') {
@@ -205,6 +210,7 @@ export function Documents() {
                                     <th>Type</th>
                                     <th>Status</th>
                                     <th>Date</th>
+                  <th>Link</th>
                                     <th>Amount</th>
                                     <th>Paid</th>
                                     <th style={{ width: 100 }}>Actions</th>
@@ -227,6 +233,22 @@ export function Documents() {
                                             </span>
                                         </td>
                                         <td>{formatDate(doc.documentDate)}</td>
+                    <td>
+                      {doc.documentLink ? (
+                        <a
+                          href={doc.documentLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-icon"
+                          title="Open link"
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+
                                         <td>{doc.amount !== null ? `$${doc.amount.toFixed(2)}` : '-'}</td>
                                         <td>{doc.paid !== null ? (doc.paid ? 'Yes' : 'No') : '-'}</td>
                                         <td>
@@ -266,7 +288,20 @@ export function Documents() {
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="modal-body">
-                                <div className="form-group">
+                                
+                <div className="form-group">
+                  <label className="form-label">Document Link (Google Drive, etc.)</label>
+                  <input
+                    type="url"
+                    name="documentLink"
+                    className="form-input"
+                    value={formData.documentLink}
+                    onChange={handleChange}
+                    placeholder="https://drive.google.com/..."
+                  />
+                </div>
+
+<div className="form-group">
                                     <label className="form-label">Project *</label>
                                     <select
                                         name="projectId"

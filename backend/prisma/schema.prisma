@@ -75,6 +75,7 @@ model Document {
   documentDate   DateTime?
   documentType   DocumentType   @default(OTHERS)
   documentStatus DocumentStatus @default(NOT_SUBMITTED)
+  documentLink   String?
   
   // Invoice-specific fields
   amount         Float?
