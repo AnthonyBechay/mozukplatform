@@ -2,7 +2,7 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install backend dependencies with npm
+# Install backend dependencies
 COPY backend/package.json ./
 RUN npm install
 
@@ -22,9 +22,10 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# Copy frontend build output into backend's public folder
+# Move frontend build into backend public folder
 RUN mv /frontend-build/dist /app/public
 
+# Cleanup
 WORKDIR /app
 RUN rm -rf /frontend-build
 RUN mkdir -p uploads
