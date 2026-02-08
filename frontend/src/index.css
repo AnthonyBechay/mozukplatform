@@ -7,19 +7,19 @@
 }
 
 :root {
-  --bg: #f8fafc;
+  --bg: #ffffff;
   --bg-card: #ffffff;
-  --bg-sidebar: #0f172a;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --text-sidebar: #cbd5e1;
+  --bg-sidebar: #000000;
+  --text: #000000;
+  --text-muted: #666666;
+  --text-sidebar: rgba(255, 255, 255, 0.7);
   --text-sidebar-active: #ffffff;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
+  --primary: #04a89a;
+  --primary-hover: #038c80;
   --danger: #ef4444;
   --danger-hover: #dc2626;
-  --success: #22c55e;
-  --border: #e2e8f0;
+  --success: #04a89a;
+  --border: #e5e5e5;
   --radius: 8px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -101,13 +101,15 @@ a {
 }
 
 .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: rgba(4, 168, 154, 0.15);
+  color: #04a89a;
 }
 
 .sidebar-link.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--text-sidebar-active);
+  background: rgba(4, 168, 154, 0.2);
+  color: #04a89a;
+  border-left: 3px solid #04a89a;
+  padding-left: 21px;
 }
 
 .sidebar-footer {
@@ -371,13 +373,13 @@ select.form-input {
 }
 
 .badge-active {
-  background: #dcfce7;
-  color: #166534;
+  background: rgba(4, 168, 154, 0.15);
+  color: #04a89a;
 }
 
 .badge-completed {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(4, 168, 154, 0.25);
+  color: #038c80;
 }
 
 .badge-on-hold {
@@ -438,8 +440,17 @@ select.form-input {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
 }
 
 .login-card {
@@ -448,8 +459,7 @@ select.form-input {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 48px 40px;
-  width: 100%
-;
+  width: 100%;
   max-width: 420px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 80px rgba(0, 209, 255, 0.1);
   position: relative;
@@ -466,8 +476,8 @@ select.form-input {
 }
 
 .login-title::first-letter {
-  color: #00D1FF;
-  text-shadow: 0 0 20px rgba(0, 209, 255, 0.5);
+  color: #04a89a;
+  text-shadow: 0 0 20px rgba(4, 168, 154, 0.5);
 }
 
 .login-subtitle {
@@ -512,24 +522,24 @@ select.form-input {
 .login-page .form-input:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.08);
-  border-color: #00D1FF;
-  box-shadow: 0 0 0 3px rgba(0, 209, 255, 0.15), 0 0 20px rgba(0, 209, 255, 0.2);
+  border-color: #04a89a;
+  box-shadow: 0 0 0 3px rgba(4, 168, 154, 0.15), 0 0 20px rgba(4, 168, 154, 0.2);
 }
 
 .login-page .btn-primary {
-  background: linear-gradient(135deg, #00D1FF 0%, #0099CC 100%);
-  color: #000000;
+  background: linear-gradient(135deg, #04a89a 0%, #038c80 100%);
+  color: #ffffff;
   font-weight: 600;
   padding: 14px;
   font-size: 15px;
   border: none;
-  box-shadow: 0 4px 15px rgba(0, 209, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(4, 168, 154, 0.3);
   transition: all 0.3s ease;
 }
 
 .login-page .btn-primary:hover {
-  background: linear-gradient(135deg, #00E5FF 0%, #00B8E6 100%);
-  box-shadow: 0 6px 20px rgba(0, 209, 255, 0.4);
+  background: linear-gradient(135deg, #05bfb0 0%, #04a89a 100%);
+  box-shadow: 0 6px 20px rgba(4, 168, 154, 0.4);
   transform: translateY(-2px);
 }
 
