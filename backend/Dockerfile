@@ -16,17 +16,19 @@ RUN cd backend && npx prisma generate
 # Build
 RUN cd backend && pnpm build
 
-# Production
+# Production — single stage, keep full node_modules tree
 FROM node:22-alpine
 WORKDIR /app
 
+# Copy the entire workspace node_modules (pnpm hoists here)
+COPY --from=base /app/node_modules ./node_modules
+# Copy backend build output
 COPY --from=base /app/backend/dist ./dist
-COPY --from=base /app/backend/node_modules ./node_modules
-COPY --from=base /app/node_modules/.pnpm ./node_modules/.pnpm
+# Copy prisma schema for db push
 COPY --from=base /app/backend/prisma ./prisma
 COPY --from=base /app/backend/package.json ./
 
-RUN mkdir -p uploads && npm install -g prisma@6
+RUN mkdir -p uploads
 
 EXPOSE 3001
 
