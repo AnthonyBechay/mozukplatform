@@ -1,13 +1,16 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { api } from '../lib/api';
-import { FileText, Download, Trash2, Plus, X } from 'lucide-react';
+import { FileText, Plus, X, Edit2, Trash2 } from 'lucide-react';
 
 interface Document {
     id: string;
-    name: string;
-    filename: string;
-    mimetype: string;
-    size: number;
+    documentId: string | null;
+    documentName: string;
+    documentDate: string | null;
+    documentType: string;
+    documentStatus: string;
+    amount: number | null;
+    paid: boolean | null;
     projectId: string;
     project: {
         id: string;
@@ -26,11 +29,17 @@ export function Documents() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [uploading, setUploading] = useState(false);
+    const [editing, setEditing] = useState<Document | null>(null);
+    const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         projectId: '',
-        name: '',
-        file: null as File | null,
+        documentId: '',
+        documentName: '',
+        documentDate: '',
+        documentType: 'OTHERS',
+        documentStatus: 'NOT_SUBMITTED',
+        amount: '',
+        paid: '',
     });
 
     useEffect(() => {
@@ -52,8 +61,79 @@ export function Documents() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this document?')) return;
+    const openNew = () => {
+        setEditing(null);
+        setFormData({
+            projectId: '',
+            documentId: '',
+            documentName: '',
+            documentDate: '',
+            documentType: 'OTHERS',
+            documentStatus: 'NOT_SUBMITTED',
+            amount: '',
+            paid: '',
+        });
+        setShowModal(true);
+    };
+
+    const openEdit = (doc: Document) => {
+        setEditing(doc);
+        setFormData({
+            projectId: doc.projectId,
+            documentId: doc.documentId || '',
+            documentName: doc.documentName,
+            documentDate: doc.documentDate ? doc.documentDate.split('T')[0] : '',
+            documentType: doc.documentType,
+            documentStatus: doc.documentStatus,
+            amount: doc.amount !== null ? String(doc.amount) : '',
+            paid: doc.paid !== null ? String(doc.paid) : '',
+        });
+        setShowModal(true);
+    };
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!formData.projectId || !formData.documentName) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const data: any = {
+                projectId: formData.projectId,
+                documentName: formData.documentName,
+                documentType: formData.documentType,
+                documentStatus: formData.documentStatus,
+            };
+
+            if (formData.documentId) data.documentId = formData.documentId;
+            if (formData.documentDate) data.documentDate = formData.documentDate;
+
+            // Only include invoice fields if type is INVOICE
+            if (formData.documentType === 'INVOICE') {
+                if (formData.amount) data.amount = formData.amount;
+                if (formData.paid) data.paid = formData.paid;
+            }
+
+            if (editing) {
+                await api.updateDocument(editing.id, data);
+            } else {
+                await api.createDocument(data);
+            }
+
+            await loadData();
+            setShowModal(false);
+        } catch (error) {
+            console.error('Failed to save document:', error);
+            alert('Failed to save document');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
         try {
             await api.deleteDocument(id);
             setDocuments(documents.filter((d) => d.id !== id));
@@ -63,31 +143,23 @@ export function Documents() {
         }
     };
 
-    const handleUpload = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!formData.file || !formData.projectId) {
-            alert('Please select a project and file');
-            return;
-        }
-
-        setUploading(true);
-        try {
-            await api.uploadDocument(formData.projectId, formData.file, formData.name || undefined);
-            await loadData();
-            setShowModal(false);
-            setFormData({ projectId: '', name: '', file: null });
-        } catch (error) {
-            console.error('Failed to upload document:', error);
-            alert('Failed to upload document');
-        } finally {
-            setUploading(false);
-        }
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const formatFileSize = (bytes: number) => {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    const formatDate = (dateString: string | null) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    const getStatusBadge = (status: string) => {
+        return status === 'SUBMITTED' ? 'badge-active' : 'badge-on-hold';
+    };
+
+    const getTypeBadge = (type: string) => {
+        if (type === 'INVOICE') return 'badge-active';
+        if (type === 'REPORT') return 'badge-completed';
+        return 'badge';
     };
 
     if (loading) {
@@ -110,7 +182,7 @@ export function Documents() {
                     <h1 className="page-title">Documents</h1>
                     <p className="page-subtitle">{documents.length} total documents</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                <button className="btn btn-primary" onClick={openNew}>
                     <Plus size={18} />
                     Add Document
                 </button>
@@ -120,47 +192,55 @@ export function Documents() {
                 {documents.length === 0 ? (
                     <div className="empty-state">
                         <FileText size={48} />
-                        <p>No documents yet. Click "Add Document" to upload a file.</p>
+                        <p>No documents yet. Click "Add Document" to create one.</p>
                     </div>
                 ) : (
                     <div className="table-container">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Document ID</th>
                                     <th>Name</th>
                                     <th>Project</th>
                                     <th>Type</th>
-                                    <th>Size</th>
-                                    <th>Uploaded</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Paid</th>
                                     <th style={{ width: 100 }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {documents.map((doc) => (
                                     <tr key={doc.id}>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <FileText size={16} style={{ color: 'var(--primary)' }} />
-                                                {doc.name}
-                                            </div>
-                                        </td>
+                                        <td>{doc.documentId || '-'}</td>
+                                        <td>{doc.documentName}</td>
                                         <td>{doc.project.name}</td>
-                                        <td>{doc.mimetype.split('/')[1]?.toUpperCase() || 'FILE'}</td>
-                                        <td>{formatFileSize(doc.size)}</td>
-                                        <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
+                                        <td>
+                                            <span className={`badge ${getTypeBadge(doc.documentType)}`}>
+                                                {doc.documentType}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${getStatusBadge(doc.documentStatus)}`}>
+                                                {doc.documentStatus.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td>{formatDate(doc.documentDate)}</td>
+                                        <td>{doc.amount !== null ? `$${doc.amount.toFixed(2)}` : '-'}</td>
+                                        <td>{doc.paid !== null ? (doc.paid ? 'Yes' : 'No') : '-'}</td>
                                         <td>
                                             <div className="btn-group">
-                                                <a
-                                                    href={api.downloadUrl(doc.id)}
+                                                <button
                                                     className="btn-icon"
-                                                    title="Download"
-                                                    download
+                                                    onClick={() => openEdit(doc)}
+                                                    title="Edit"
                                                 >
-                                                    <Download size={16} />
-                                                </a>
+                                                    <Edit2 size={16} />
+                                                </button>
                                                 <button
                                                     className="btn-icon danger"
-                                                    onClick={() => handleDelete(doc.id)}
+                                                    onClick={() => handleDelete(doc.id, doc.documentName)}
                                                     title="Delete"
                                                 >
                                                     <Trash2 size={16} />
@@ -179,19 +259,20 @@ export function Documents() {
                 <div className="modal-overlay">
                     <div className="modal">
                         <div className="modal-header">
-                            <h2 className="modal-title">Upload Document</h2>
+                            <h2 className="modal-title">{editing ? 'Edit Document' : 'Add Document'}</h2>
                             <button className="btn-icon" onClick={() => setShowModal(false)}>
                                 <X size={18} />
                             </button>
                         </div>
-                        <form onSubmit={handleUpload}>
+                        <form onSubmit={handleSubmit}>
                             <div className="modal-body">
                                 <div className="form-group">
                                     <label className="form-label">Project *</label>
                                     <select
+                                        name="projectId"
                                         className="form-input"
                                         value={formData.projectId}
-                                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                                        onChange={handleChange}
                                         required
                                     >
                                         <option value="">Select a project</option>
@@ -202,32 +283,108 @@ export function Documents() {
                                         ))}
                                     </select>
                                 </div>
+
                                 <div className="form-group">
-                                    <label className="form-label">Document Name (optional)</label>
+                                    <label className="form-label">Document ID</label>
                                     <input
                                         type="text"
+                                        name="documentId"
                                         className="form-input"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Leave empty to use filename"
+                                        value={formData.documentId}
+                                        onChange={handleChange}
+                                        placeholder="Optional unique identifier"
                                     />
                                 </div>
+
                                 <div className="form-group">
-                                    <label className="form-label">File *</label>
+                                    <label className="form-label">Document Name *</label>
                                     <input
-                                        type="file"
+                                        type="text"
+                                        name="documentName"
                                         className="form-input"
-                                        onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                                        value={formData.documentName}
+                                        onChange={handleChange}
                                         required
                                     />
                                 </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Document Date</label>
+                                    <input
+                                        type="date"
+                                        name="documentDate"
+                                        className="form-input"
+                                        value={formData.documentDate}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Document Type *</label>
+                                    <select
+                                        name="documentType"
+                                        className="form-input"
+                                        value={formData.documentType}
+                                        onChange={handleChange}
+                                        required
+                                    >
+                                        <option value="INVOICE">Invoice</option>
+                                        <option value="REPORT">Report</option>
+                                        <option value="OTHERS">Others</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Document Status *</label>
+                                    <select
+                                        name="documentStatus"
+                                        className="form-input"
+                                        value={formData.documentStatus}
+                                        onChange={handleChange}
+                                        required
+                                    >
+                                        <option value="SUBMITTED">Submitted</option>
+                                        <option value="NOT_SUBMITTED">Not Submitted</option>
+                                    </select>
+                                </div>
+
+                                {formData.documentType === 'INVOICE' && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">Amount</label>
+                                            <input
+                                                type="number"
+                                                name="amount"
+                                                className="form-input"
+                                                value={formData.amount}
+                                                onChange={handleChange}
+                                                step="0.01"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="form-label">Paid</label>
+                                            <select
+                                                name="paid"
+                                                className="form-input"
+                                                value={formData.paid}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select...</option>
+                                                <option value="true">Yes</option>
+                                                <option value="false">No</option>
+                                            </select>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn btn-primary" disabled={uploading}>
-                                    {uploading ? 'Uploading...' : 'Upload'}
+                                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                                    {submitting ? 'Saving...' : editing ? 'Update' : 'Create'}
                                 </button>
                             </div>
                         </form>

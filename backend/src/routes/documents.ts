@@ -1,30 +1,39 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { authenticate } from '../middleware/auth';
 
 const prisma = new PrismaClient();
 const router = Router();
 
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  },
-});
-
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
-
 router.use(authenticate);
 
+// Helper function to clean and validate document data
+function cleanDocumentData(body: any) {
+  const data: any = {
+    projectId: body.projectId,
+    documentName: body.documentName,
+    documentType: body.documentType || 'OTHERS',
+    documentStatus: body.documentStatus || 'NOT_SUBMITTED',
+  };
+
+  // Optional fields
+  if (body.documentId) data.documentId = body.documentId;
+  if (body.documentDate) data.documentDate = new Date(body.documentDate);
+
+  // Invoice-specific fields (only if documentType is INVOICE)
+  if (body.documentType === 'INVOICE') {
+    if (body.amount !== undefined && body.amount !== null && body.amount !== '') {
+      data.amount = parseFloat(body.amount);
+    }
+    if (body.paid !== undefined && body.paid !== null && body.paid !== '') {
+      data.paid = body.paid === 'true' || body.paid === true;
+    }
+  }
+
+  return data;
+}
+
+// GET all documents
 router.get('/', async (req, res) => {
   try {
     const { projectId } = req.query;
@@ -40,53 +49,40 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('file'), async (req, res) => {
+// POST create new document
+router.post('/', async (req, res) => {
   try {
-    if (!req.file) {
-      res.status(400).json({ error: 'No file uploaded' });
-      return;
-    }
-    const { projectId } = req.body;
+    const data = cleanDocumentData(req.body);
     const doc = await prisma.document.create({
-      data: {
-        name: req.body.name || req.file.originalname,
-        filename: req.file.filename,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        projectId,
-      },
+      data,
+      include: { project: { select: { id: true, name: true } } },
     });
     res.status(201).json(doc);
-  } catch {
-    res.status(500).json({ error: 'Failed to upload document' });
+  } catch (error: any) {
+    console.error('Document creation error:', error);
+    res.status(500).json({ error: 'Failed to create document' });
   }
 });
 
-router.get('/:id/download', async (req, res) => {
+// PUT update document
+router.put('/:id', async (req, res) => {
   try {
-    const doc = await prisma.document.findUnique({ where: { id: req.params.id } });
-    if (!doc) {
-      res.status(404).json({ error: 'Document not found' });
-      return;
-    }
-    const filePath = path.join(uploadDir, doc.filename);
-    res.download(filePath, doc.name);
-  } catch {
-    res.status(500).json({ error: 'Failed to download document' });
+    const data = cleanDocumentData(req.body);
+    const doc = await prisma.document.update({
+      where: { id: req.params.id },
+      data,
+      include: { project: { select: { id: true, name: true } } },
+    });
+    res.json(doc);
+  } catch (error: any) {
+    console.error('Document update error:', error);
+    res.status(500).json({ error: 'Failed to update document' });
   }
 });
 
+// DELETE document
 router.delete('/:id', async (req, res) => {
   try {
-    const doc = await prisma.document.findUnique({ where: { id: req.params.id } });
-    if (!doc) {
-      res.status(404).json({ error: 'Document not found' });
-      return;
-    }
-    const filePath = path.join(uploadDir, doc.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
     await prisma.document.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch {

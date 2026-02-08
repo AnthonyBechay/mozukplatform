@@ -60,14 +60,10 @@ export const api = {
   // Documents
   getDocuments: (projectId?: string) =>
     request(`/documents${projectId ? `?projectId=${projectId}` : ''}`),
-  uploadDocument: (projectId: string, file: File, name?: string) => {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('projectId', projectId);
-    if (name) form.append('name', name);
-    return request('/documents', { method: 'POST', body: form });
-  },
+  createDocument: (data: any) =>
+    request('/documents', { method: 'POST', body: JSON.stringify(data) }),
+  updateDocument: (id: string, data: any) =>
+    request(`/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteDocument: (id: string) =>
     request(`/documents/${id}`, { method: 'DELETE' }),
-  downloadUrl: (id: string) => `${API_BASE}/documents/${id}/download`,
 };
