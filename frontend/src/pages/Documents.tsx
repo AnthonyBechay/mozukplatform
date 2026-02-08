@@ -23,6 +23,11 @@ interface Document {
 interface Project {
     id: string;
     name: string;
+    projectId: string | null;
+    client: {
+        id: string;
+        customId: string | null;
+    };
 }
 
 export function Documents() {
@@ -32,6 +37,7 @@ export function Documents() {
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<Document | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [documentIdSuffix, setDocumentIdSuffix] = useState('');
     const [formData, setFormData] = useState({
         projectId: '',
         documentId: '',
@@ -63,8 +69,25 @@ export function Documents() {
         }
     };
 
+    // Auto-generate composite document ID when project or suffix changes
+    useEffect(() => {
+        if (!editing && formData.projectId && projects.length > 0) {
+            const selectedProject = projects.find(p => p.id === formData.projectId);
+            if (selectedProject) {
+                const clientId = selectedProject.client.customId || selectedProject.client.id;
+                const projId = selectedProject.projectId || selectedProject.id;
+                const fullDocId = documentIdSuffix 
+                    ? `${clientId}-${projId}-${documentIdSuffix}`
+                    : `${clientId}-${projId}-`;
+                setFormData(prev => ({ ...prev, documentId: fullDocId }));
+            }
+        }
+    }, [formData.projectId, documentIdSuffix, projects, editing]);
+
+
     const openNew = () => {
         setEditing(null);
+        setDocumentIdSuffix('');
         setFormData({
             projectId: '',
             documentId: '',
@@ -72,7 +95,7 @@ export function Documents() {
             documentDate: '',
             documentType: 'OTHERS',
             documentStatus: 'NOT_SUBMITTED',
-        documentLink: '',
+            documentLink: '',
             amount: '',
             paid: '',
         });
@@ -81,6 +104,15 @@ export function Documents() {
 
     const openEdit = (doc: Document) => {
         setEditing(doc);
+        // Extract suffix from existing documentId if it exists
+        let suffix = '';
+        if (doc.documentId) {
+            const parts = doc.documentId.split('-');
+            if (parts.length >= 3) {
+                suffix = parts.slice(2).join('-');
+            }
+        }
+        setDocumentIdSuffix(suffix);
         setFormData({
             projectId: doc.projectId,
             documentId: doc.documentId || '',
@@ -88,7 +120,7 @@ export function Documents() {
             documentDate: doc.documentDate ? doc.documentDate.split('T')[0] : '',
             documentType: doc.documentType,
             documentStatus: doc.documentStatus,
-      documentLink: doc.documentLink || '',
+            documentLink: doc.documentLink || '',
             amount: doc.amount !== null ? String(doc.amount) : '',
             paid: doc.paid !== null ? String(doc.paid) : '',
         });
@@ -113,7 +145,7 @@ export function Documents() {
 
             if (formData.documentId) data.documentId = formData.documentId;
             if (formData.documentDate) data.documentDate = formData.documentDate;
-      if (formData.documentLink) data.documentLink = formData.documentLink;
+            if (formData.documentLink) data.documentLink = formData.documentLink;
 
             // Only include invoice fields if type is INVOICE
             if (formData.documentType === 'INVOICE') {
@@ -146,6 +178,11 @@ export function Documents() {
             console.error('Failed to delete document:', error);
             alert('Failed to delete document');
         }
+    };
+
+    
+    const handleDocIdSuffixChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setDocumentIdSuffix(e.target.value);
     };
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -210,7 +247,7 @@ export function Documents() {
                                     <th>Type</th>
                                     <th>Status</th>
                                     <th>Date</th>
-                  <th>Link</th>
+                                    <th>Link</th>
                                     <th>Amount</th>
                                     <th>Paid</th>
                                     <th style={{ width: 100 }}>Actions</th>
@@ -233,21 +270,21 @@ export function Documents() {
                                             </span>
                                         </td>
                                         <td>{formatDate(doc.documentDate)}</td>
-                    <td>
-                      {doc.documentLink ? (
-                        <a
-                          href={doc.documentLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-icon"
-                          title="Open link"
-                        >
-                          <ExternalLink size={16} />
-                        </a>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
+                                        <td>
+                                            {doc.documentLink ? (
+                                                <a
+                                                    href={doc.documentLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn-icon"
+                                                    title="Open link"
+                                                >
+                                                    <ExternalLink size={16} />
+                                                </a>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </td>
 
                                         <td>{doc.amount !== null ? `$${doc.amount.toFixed(2)}` : '-'}</td>
                                         <td>{doc.paid !== null ? (doc.paid ? 'Yes' : 'No') : '-'}</td>
@@ -288,20 +325,20 @@ export function Documents() {
                         </div>
                         <form onSubmit={handleSubmit}>
                             <div className="modal-body">
-                                
-                <div className="form-group">
-                  <label className="form-label">Document Link (Google Drive, etc.)</label>
-                  <input
-                    type="url"
-                    name="documentLink"
-                    className="form-input"
-                    value={formData.documentLink}
-                    onChange={handleChange}
-                    placeholder="https://drive.google.com/..."
-                  />
-                </div>
 
-<div className="form-group">
+                                <div className="form-group">
+                                    <label className="form-label">Document Link (Google Drive, etc.)</label>
+                                    <input
+                                        type="url"
+                                        name="documentLink"
+                                        className="form-input"
+                                        value={formData.documentLink}
+                                        onChange={handleChange}
+                                        placeholder="https://drive.google.com/..."
+                                    />
+                                </div>
+
+                                <div className="form-group">
                                     <label className="form-label">Project *</label>
                                     <select
                                         name="projectId"
