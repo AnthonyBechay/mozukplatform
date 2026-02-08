@@ -46,9 +46,9 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, description, status, clientId } = req.body;
+    const { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag } = req.body;
     const project = await prisma.project.create({
-      data: { name, description, status, clientId },
+      data: { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag },
       include: { client: { select: { id: true, name: true } } },
     });
     res.status(201).json(project);
@@ -59,10 +59,10 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, description, status, clientId } = req.body;
+    const { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag } = req.body;
     const project = await prisma.project.update({
       where: { id: req.params.id },
-      data: { name, description, status, clientId },
+      data: { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag },
       include: { client: { select: { id: true, name: true } } },
     });
     res.json(project);
