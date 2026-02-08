@@ -28,27 +28,6 @@ services:
       - '-c'
       - "npx prisma db push --schema=prisma/schema.prisma || echo 'DB push skipped' && node prisma/seed.js || echo 'Seed skipped' && node dist/index.js"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - coolify
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'curl -f http://localhost/ || exit 1'
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-
 volumes:
   backend_data:
     driver: local
