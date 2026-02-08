@@ -1,35 +1,20 @@
-FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@10.26.1 --activate
-WORKDIR /app
-
-# Copy workspace config
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
-COPY backend/package.json backend/
-
-# Install deps
-RUN cd backend && pnpm install --frozen-lockfile 2>/dev/null || pnpm install
-
-# Copy source & generate prisma
-COPY backend/ backend/
-RUN cd backend && npx prisma generate
-
-# Build
-RUN cd backend && pnpm build
-
-# Production — clean install with npm to avoid pnpm symlink issues
 FROM node:22-alpine
+
 WORKDIR /app
 
-# Copy package.json and install prod deps with npm (no symlink issues)
+# Install production dependencies directly with npm (no pnpm symlink issues)
 COPY backend/package.json ./
-RUN npm install --omit=dev
+RUN npm install
 
-# Generate prisma client in production
-COPY --from=base /app/backend/prisma ./prisma
-RUN npx prisma generate
+# Copy prisma schema and generate client
+COPY backend/prisma ./prisma
+RUN npx prisma generate --schema=prisma/schema.prisma
 
-# Copy build output and seed
-COPY --from=base /app/backend/dist ./dist
+# Copy built source from local (we build with pnpm in CI, copy dist)
+# But since we need to build in Docker too, copy source and build here
+COPY backend/src ./src
+COPY backend/tsconfig.json ./
+RUN npx tsc
 
 RUN mkdir -p uploads
 
