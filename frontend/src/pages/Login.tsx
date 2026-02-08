@@ -28,7 +28,9 @@ export function Login({ onLogin }: LoginProps) {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">Mozuk</h1>
+        <h1 className="login-title">
+          MOZ<span style={{ color: '#04a89a', textShadow: '0 0 20px rgba(4, 168, 154, 0.5)' }}>U</span>K
+        </h1>
         <p className="login-subtitle">Sign in to your account</p>
         {error && <div className="login-error">{error}</div>}
         <form onSubmit={handleSubmit}>
