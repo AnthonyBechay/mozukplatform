@@ -7,6 +7,20 @@ const router = Router();
 
 router.use(authenticate);
 
+// Convert empty strings to null for optional fields
+function cleanProjectData(body: any) {
+  return {
+    name: body.name,
+    description: body.description || null,
+    status: body.status,
+    clientId: body.clientId,
+    projectId: body.projectId || null,
+    projectDate: body.projectDate ? new Date(body.projectDate) : null,
+    projectLocation: body.projectLocation || null,
+    projectTag: body.projectTag || 'MISC',
+  };
+}
+
 router.get('/', async (req, res) => {
   try {
     const { clientId } = req.query;
@@ -46,9 +60,9 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag } = req.body;
+    const data = cleanProjectData(req.body);
     const project = await prisma.project.create({
-      data: { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag },
+      data,
       include: { client: { select: { id: true, name: true } } },
     });
     res.status(201).json(project);
@@ -59,10 +73,10 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag } = req.body;
+    const data = cleanProjectData(req.body);
     const project = await prisma.project.update({
       where: { id: req.params.id },
-      data: { name, description, status, clientId, projectId, projectDate, projectLocation, projectTag },
+      data,
       include: { client: { select: { id: true, name: true } } },
     });
     res.json(project);
