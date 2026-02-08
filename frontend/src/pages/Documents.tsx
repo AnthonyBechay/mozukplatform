@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { api } from '../lib/api';
-import { FileText, Download, Trash2 } from 'lucide-react';
+import { FileText, Download, Trash2, Plus, X } from 'lucide-react';
 
 interface Document {
     id: string;
@@ -16,20 +16,37 @@ interface Document {
     createdAt: string;
 }
 
+interface Project {
+    id: string;
+    name: string;
+}
+
 export function Documents() {
     const [documents, setDocuments] = useState<Document[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [formData, setFormData] = useState({
+        projectId: '',
+        name: '',
+        file: null as File | null,
+    });
 
     useEffect(() => {
-        loadDocuments();
+        loadData();
     }, []);
 
-    const loadDocuments = async () => {
+    const loadData = async () => {
         try {
-            const data = await api.getDocuments();
-            setDocuments(data);
+            const [docsData, projectsData] = await Promise.all([
+                api.getDocuments(),
+                api.getProjects(),
+            ]);
+            setDocuments(docsData);
+            setProjects(projectsData);
         } catch (error) {
-            console.error('Failed to load documents:', error);
+            console.error('Failed to load data:', error);
         } finally {
             setLoading(false);
         }
@@ -43,6 +60,27 @@ export function Documents() {
         } catch (error) {
             console.error('Failed to delete document:', error);
             alert('Failed to delete document');
+        }
+    };
+
+    const handleUpload = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!formData.file || !formData.projectId) {
+            alert('Please select a project and file');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            await api.uploadDocument(formData.projectId, formData.file, formData.name || undefined);
+            await loadData();
+            setShowModal(false);
+            setFormData({ projectId: '', name: '', file: null });
+        } catch (error) {
+            console.error('Failed to upload document:', error);
+            alert('Failed to upload document');
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -72,13 +110,17 @@ export function Documents() {
                     <h1 className="page-title">Documents</h1>
                     <p className="page-subtitle">{documents.length} total documents</p>
                 </div>
+                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                    <Plus size={18} />
+                    Add Document
+                </button>
             </div>
 
             <div className="card">
                 {documents.length === 0 ? (
                     <div className="empty-state">
                         <FileText size={48} />
-                        <p>No documents yet. Upload files from project pages.</p>
+                        <p>No documents yet. Click "Add Document" to upload a file.</p>
                     </div>
                 ) : (
                     <div className="table-container">
@@ -132,6 +174,66 @@ export function Documents() {
                     </div>
                 )}
             </div>
+
+            {showModal && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <div className="modal-header">
+                            <h2 className="modal-title">Upload Document</h2>
+                            <button className="btn-icon" onClick={() => setShowModal(false)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpload}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label className="form-label">Project *</label>
+                                    <select
+                                        className="form-input"
+                                        value={formData.projectId}
+                                        onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">Select a project</option>
+                                        {projects.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Document Name (optional)</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="Leave empty to use filename"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">File *</label>
+                                    <input
+                                        type="file"
+                                        className="form-input"
+                                        onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn btn-primary" disabled={uploading}>
+                                    {uploading ? 'Uploading...' : 'Upload'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
