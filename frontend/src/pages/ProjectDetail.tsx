@@ -1,16 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { Modal } from '../components/Modal';
-import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ChevronRight, Upload, Trash2, Download, FileText } from 'lucide-react';
+import { ChevronRight, Edit2, Trash2, ExternalLink, FileText } from 'lucide-react';
 
 interface Document {
   id: string;
-  name: string;
-  filename: string;
-  mimetype: string;
-  size: number;
+  documentId: string | null;
+  documentName: string;
+  documentDate: string | null;
+  documentType: string;
+  documentStatus: string;
+  documentLink: string | null;
+  amount: number | null;
+  paid: boolean | null;
+  projectId: string;
+  project: {
+    id: string;
+    name: string;
+  };
   createdAt: string;
 }
 
@@ -20,67 +27,51 @@ interface Project {
   description: string | null;
   status: string;
   client: { id: string; name: string };
-  documents: Document[];
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
-  const [deleting, setDeleting] = useState<Document | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [docName, setDocName] = useState('');
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => {
-    if (id) api.getProject(id).then(setProject);
-  };
-
-  useEffect(() => { load(); }, [id]);
-
-  const handleUpload = async () => {
-    if (!selectedFile || !id) return;
-    setUploading(true);
+  const loadData = async () => {
+    if (!id) return;
     try {
-      await api.uploadDocument(id, selectedFile, docName || undefined);
-      setShowUpload(false);
-      setSelectedFile(null);
-      setDocName('');
-      load();
+      const [projectData, docsData] = await Promise.all([
+        api.getProject(id),
+        api.getDocuments(),
+      ]);
+      setProject(projectData);
+      // Filter documents for this project
+      const projectDocs = docsData.filter((doc: Document) => doc.projectId === id);
+      setDocuments(projectDocs);
+    } catch (error) {
+      console.error('Failed to load data:', error);
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (deleting) {
-      await api.deleteDocument(deleting.id);
-      setDeleting(null);
-      load();
-    }
-  };
+  useEffect(() => {
+    loadData();
+  }, [id]);
 
-  const handleDownload = (doc: Document) => {
-    const token = localStorage.getItem('token');
-    const url = api.downloadUrl(doc.id);
-    const a = document.createElement('a');
-    a.href = `${url}?token=${token}`;
-    a.download = doc.name;
-    a.click();
-  };
-
-  if (!project) return null;
+  if (loading) return <div>Loading...</div>;
+  if (!project) return <div>Project not found</div>;
 
   const statusBadge = (status: string) => {
-    const cls = status === 'active' ? 'badge-active' : status === 'completed' ? 'badge-completed' : 'badge-on-hold';
-    return <span className={`badge ${cls}`}>{status}</span>;
+    const cls = status === 'SUBMITTED' ? 'badge-active' : 'badge-pending';
+    return <span className={`badge ${cls}`}>{status.replace('_', ' ')}</span>;
+  };
+
+  const typeBadge = (type: string) => {
+    const colors: Record<string, string> = {
+      INVOICE: 'badge-active',
+      REPORT: 'badge-pending',
+      OTHERS: 'badge-on-hold',
+    };
+    return <span className={`badge ${colors[type] || 'badge-on-hold'}`}>{type}</span>;
   };
 
   return (
@@ -92,49 +83,81 @@ export function ProjectDetail() {
         <ChevronRight size={14} />
         <span>{project.name}</span>
       </div>
+
       <div className="page-header">
         <div>
-          <h1 className="page-title">{project.name} {statusBadge(project.status)}</h1>
+          <h1 className="page-title">{project.name}</h1>
           <p className="page-subtitle">{project.description || 'No description'}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowUpload(true)}>
-          <Upload size={16} /> Upload Document
-        </button>
       </div>
 
       <div className="card">
-        <div className="card-header">Documents ({project.documents.length})</div>
-        {project.documents.length === 0 ? (
+        <div className="card-header">
+          Documents ({documents.length})
+        </div>
+        {documents.length === 0 ? (
           <div className="empty-state">
             <FileText size={48} />
-            <p>No documents yet. Upload a file to get started.</p>
+            <p>No documents found for this project.</p>
           </div>
         ) : (
           <div className="table-container">
             <table>
               <thead>
                 <tr>
+                  <th>Document ID</th>
                   <th>Name</th>
+                  <th>Project</th>
                   <th>Type</th>
-                  <th>Size</th>
-                  <th>Uploaded</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Link</th>
+                  <th>Amount</th>
+                  <th>Paid</th>
                   <th style={{ width: 100 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {project.documents.map((doc) => (
+                {documents.map((doc) => (
                   <tr key={doc.id}>
-                    <td style={{ fontWeight: 500 }}>{doc.name}</td>
-                    <td style={{ color: '#64748b' }}>{doc.mimetype}</td>
-                    <td>{formatBytes(doc.size)}</td>
-                    <td style={{ color: '#64748b' }}>{new Date(doc.createdAt).toLocaleDateString()}</td>
+                    <td style={{ fontWeight: 500 }}>{doc.documentId || '-'}</td>
+                    <td>{doc.documentName}</td>
+                    <td>{doc.project.name}</td>
+                    <td>{typeBadge(doc.documentType)}</td>
+                    <td>{statusBadge(doc.documentStatus)}</td>
+                    <td>{doc.documentDate ? new Date(doc.documentDate).toLocaleDateString() : '-'}</td>
+                    <td>
+                      {doc.documentLink ? (
+                        <a
+                          href={doc.documentLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link-icon"
+                          title="Open link"
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td>{doc.amount ? `$${doc.amount.toFixed(2)}` : '-'}</td>
+                    <td>{doc.paid === null ? '-' : doc.paid ? 'Yes' : 'No'}</td>
                     <td>
                       <div className="btn-group">
-                        <button className="btn-icon" onClick={() => handleDownload(doc)}>
-                          <Download size={15} />
+                        <button
+                          className="btn-icon"
+                          onClick={() => {/* Edit functionality */ }}
+                          title="Edit"
+                        >
+                          <Edit2 size={16} />
                         </button>
-                        <button className="btn-icon danger" onClick={() => setDeleting(doc)}>
-                          <Trash2 size={15} />
+                        <button
+                          className="btn-icon danger"
+                          onClick={() => {/* Delete functionality */ }}
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -145,47 +168,6 @@ export function ProjectDetail() {
           </div>
         )}
       </div>
-
-      {showUpload && (
-        <Modal
-          title="Upload Document"
-          onClose={() => { setShowUpload(false); setSelectedFile(null); setDocName(''); }}
-          footer={
-            <>
-              <button className="btn btn-secondary" onClick={() => { setShowUpload(false); setSelectedFile(null); }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleUpload} disabled={!selectedFile || uploading}>
-                {uploading ? 'Uploading...' : 'Upload'}
-              </button>
-            </>
-          }
-        >
-          <div className="form-group">
-            <label className="form-label">Document Name (optional)</label>
-            <input className="form-input" value={docName} onChange={(e) => setDocName(e.target.value)} placeholder="Leave blank to use filename" />
-          </div>
-          <div
-            className="file-drop"
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload size={32} color="#94a3b8" />
-            <p>{selectedFile ? selectedFile.name : 'Click to select a file'}</p>
-            <input
-              ref={fileRef}
-              type="file"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-            />
-          </div>
-        </Modal>
-      )}
-
-      {deleting && (
-        <ConfirmDialog
-          title="Delete Document"
-          message={`Are you sure you want to delete "${deleting.name}"?`}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleting(null)}
-        />
-      )}
     </div>
   );
 }

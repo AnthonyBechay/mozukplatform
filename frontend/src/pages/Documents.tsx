@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { FileText, Plus, X, Edit2, Trash2, ExternalLink } from 'lucide-react';
 
@@ -31,6 +32,8 @@ interface Project {
 }
 
 export function Documents() {
+    const [searchParams] = useSearchParams();
+    const projectIdFilter = searchParams.get('projectId');
     const [documents, setDocuments] = useState<Document[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,7 +55,7 @@ export function Documents() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [projectIdFilter]);
 
     const loadData = async () => {
         try {
@@ -60,7 +63,11 @@ export function Documents() {
                 api.getDocuments(),
                 api.getProjects(),
             ]);
-            setDocuments(docsData);
+            // Filter documents by projectId if provided in URL
+            const filteredDocs = projectIdFilter
+                ? docsData.filter(doc => doc.projectId === projectIdFilter)
+                : docsData;
+            setDocuments(filteredDocs);
             setProjects(projectsData);
         } catch (error) {
             console.error('Failed to load data:', error);
