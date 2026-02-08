@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, Users } from 'lucide-react';
 
 interface Client {
   id: string;
+  customId: string | null;
   name: string;
   email: string | null;
   phone: string | null;
@@ -21,20 +22,20 @@ export function Clients() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [deleting, setDeleting] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', notes: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', notes: '', customId: '' });
 
   const load = () => api.getClients().then(setClients);
 
   useEffect(() => { load(); }, []);
 
   const openNew = () => {
-    setForm({ name: '', email: '', phone: '', company: '', notes: '' });
+    setForm({ name: '', email: '', phone: '', company: '', notes: '', customId: '' });
     setEditing(null);
     setShowForm(true);
   };
 
   const openEdit = (c: Client) => {
-    setForm({ name: c.name, email: c.email || '', phone: c.phone || '', company: c.company || '', notes: c.notes || '' });
+    setForm({ name: c.name, email: c.email || '', phone: c.phone || '', company: c.company || '', notes: c.notes || '', customId: c.customId || '' });
     setEditing(c);
     setShowForm(true);
   };
@@ -128,6 +129,10 @@ export function Clients() {
           <div className="form-group">
             <label className="form-label">Name *</label>
             <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Custom ID</label>
+            <input className="form-input" value={form.customId} onChange={(e) => setForm({ ...form, customId: e.target.value })} placeholder="Optional unique identifier" />
           </div>
           <div className="form-group">
             <label className="form-label">Company</label>

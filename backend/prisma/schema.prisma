@@ -18,6 +18,7 @@ model User {
 
 model Client {
   id        String    @id @default(cuid())
+  customId  String?   @unique
   name      String
   email     String?
   phone     String?

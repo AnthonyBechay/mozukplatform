@@ -15,6 +15,7 @@ interface Project {
 
 interface Client {
   id: string;
+  customId: string | null;
   name: string;
   email: string | null;
   phone: string | null;
