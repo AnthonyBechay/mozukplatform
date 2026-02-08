@@ -373,14 +373,74 @@ export function Documents() {
 
                                 <div className="form-group">
                                     <label className="form-label">Document ID</label>
-                                    <input
-                                        type="text"
-                                        name="documentId"
-                                        className="form-input"
-                                        value={formData.documentId}
-                                        onChange={handleChange}
-                                        placeholder="Optional unique identifier"
-                                    />
+                                    {!editing && formData.projectId && projects.length > 0 ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {/* Client ID - readonly */}
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={(() => {
+                                                    const selectedProject = projects.find((p: Project) => p.id === formData.projectId);
+                                                    return selectedProject ? (selectedProject.client.customId || 'XXXX') : '';
+                                                })()}
+                                                readOnly
+                                                placeholder="Client ID"
+                                                style={{
+                                                    flex: '1',
+                                                    backgroundColor: '#2a2a2a',
+                                                    color: '#888',
+                                                    cursor: 'not-allowed',
+                                                    textAlign: 'center'
+                                                }}
+                                            />
+                                            <span style={{ color: '#888', fontSize: '20px', fontWeight: 'bold' }}>-</span>
+
+                                            {/* Project ID - readonly */}
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={(() => {
+                                                    const selectedProject = projects.find((p: Project) => p.id === formData.projectId);
+                                                    return selectedProject ? (selectedProject.projectId || 'XXXX') : '';
+                                                })()}
+                                                readOnly
+                                                placeholder="Project ID"
+                                                style={{
+                                                    flex: '1',
+                                                    backgroundColor: '#2a2a2a',
+                                                    color: '#888',
+                                                    cursor: 'not-allowed',
+                                                    textAlign: 'center'
+                                                }}
+                                            />
+                                            <span style={{ color: '#888', fontSize: '20px', fontWeight: 'bold' }}>-</span>
+
+                                            {/* Document suffix - editable */}
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={documentIdSuffix}
+                                                onChange={handleDocIdSuffixChange}
+                                                placeholder="Doc #"
+                                                style={{ flex: '1', textAlign: 'center' }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            name="documentId"
+                                            className="form-input"
+                                            value={formData.documentId}
+                                            onChange={handleChange}
+                                            placeholder={editing ? "Document ID" : "Select a project first"}
+                                            readOnly={!editing}
+                                            style={!editing ? {
+                                                backgroundColor: '#2a2a2a',
+                                                color: '#888',
+                                                cursor: 'not-allowed'
+                                            } : {}}
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="form-group">
