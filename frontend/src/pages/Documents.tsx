@@ -355,6 +355,12 @@ export function Documents() {
                                         value={formData.projectId}
                                         onChange={handleChange}
                                         required
+                                        disabled={editing || (formData.projectId && documentIdSuffix !== '')}
+                                        style={editing || (formData.projectId && documentIdSuffix !== '') ? {
+                                            backgroundColor: '#2a2a2a',
+                                            color: '#888',
+                                            cursor: 'not-allowed'
+                                        } : {}}
                                     >
                                         <option value="">Select a project</option>
                                         {projects.map((p) => (
