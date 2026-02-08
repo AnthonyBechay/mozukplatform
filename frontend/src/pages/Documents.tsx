@@ -74,9 +74,9 @@ export function Documents() {
         if (!editing && formData.projectId && projects.length > 0) {
             const selectedProject = projects.find(p => p.id === formData.projectId);
             if (selectedProject) {
-                const clientId = selectedProject.client.customId || selectedProject.client.id;
-                const projId = selectedProject.projectId || selectedProject.id;
-                const fullDocId = documentIdSuffix 
+                const clientId = selectedProject.client.customId || 'XXXX';
+                const projId = selectedProject.projectId || 'XXXX';
+                const fullDocId = documentIdSuffix
                     ? `${clientId}-${projId}-${documentIdSuffix}`
                     : `${clientId}-${projId}-`;
                 setFormData(prev => ({ ...prev, documentId: fullDocId }));
@@ -180,7 +180,7 @@ export function Documents() {
         }
     };
 
-    
+
     const handleDocIdSuffixChange = (e: ChangeEvent<HTMLInputElement>) => {
         setDocumentIdSuffix(e.target.value);
     };
@@ -294,6 +294,15 @@ export function Documents() {
                                                     className="btn-icon"
                                                     onClick={() => openEdit(doc)}
                                                     title="Edit"
+                                                    value={(() => {
+                                                        const selectedProject = projects.find(p => p.id === formData.projectId);
+                                                        if (selectedProject) {
+                                                            const clientId = selectedProject.client.customId || 'XXXX';
+                                                            const projId = selectedProject.projectId || 'XXXX';
+                                                            return `${clientId}-${projId}-`;
+                                                        }
+                                                        return '';
+                                                    })()}
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
