@@ -7,9 +7,13 @@ import { Plus, Pencil, Trash2, ChevronRight, FolderKanban } from 'lucide-react';
 
 interface Project {
   id: string;
+  projectId: string | null;
   name: string;
   description: string | null;
   status: string;
+  projectDate: string | null;
+  projectLocation: string | null;
+  projectTag: string;
   createdAt: string;
 }
 
@@ -30,7 +34,15 @@ export function ClientDetail() {
   const [client, setClient] = useState<Client | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState<Project | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', status: 'active' });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    status: 'INCOMPLETE',
+    projectId: '',
+    projectDate: '',
+    projectLocation: '',
+    projectTag: 'MISC'
+  });
 
   const load = () => {
     if (id) api.getClient(id).then(setClient);
@@ -39,7 +51,15 @@ export function ClientDetail() {
   useEffect(() => { load(); }, [id]);
 
   const openNew = () => {
-    setForm({ name: '', description: '', status: 'active' });
+    setForm({
+      name: '',
+      description: '',
+      status: 'INCOMPLETE',
+      projectId: '',
+      projectDate: '',
+      projectLocation: '',
+      projectTag: 'MISC'
+    });
     setShowForm(true);
   };
 
@@ -147,15 +167,35 @@ export function ClientDetail() {
             <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </div>
           <div className="form-group">
+            <label className="form-label">Project ID</label>
+            <input className="form-input" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} placeholder="Optional unique identifier" />
+          </div>
+          <div className="form-group">
             <label className="form-label">Description</label>
             <textarea className="form-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
           <div className="form-group">
+            <label className="form-label">Project Date</label>
+            <input className="form-input" type="date" value={form.projectDate} onChange={(e) => setForm({ ...form, projectDate: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Project Location</label>
+            <input className="form-input" value={form.projectLocation} onChange={(e) => setForm({ ...form, projectLocation: e.target.value })} placeholder="Location" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Project Tag</label>
+            <select className="form-input" value={form.projectTag} onChange={(e) => setForm({ ...form, projectTag: e.target.value })}>
+              <option value="MISC">Misc</option>
+              <option value="MOZUK">Mozuk</option>
+              <option value="MOZUK_MARINE">Mozuk Marine</option>
+            </select>
+          </div>
+          <div className="form-group">
             <label className="form-label">Status</label>
             <select className="form-input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="active">Active</option>
-              <option value="on-hold">On Hold</option>
-              <option value="completed">Completed</option>
+              <option value="INCOMPLETE">Incomplete</option>
+              <option value="COMPLETE_SOLVED">Complete Solved</option>
+              <option value="COMPLETE_NOT_SOLVED">Complete Not Solved</option>
             </select>
           </div>
         </Modal>

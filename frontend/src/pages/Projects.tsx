@@ -7,9 +7,13 @@ import { Plus, Pencil, Trash2, FolderKanban } from 'lucide-react';
 
 interface Project {
   id: string;
+  projectId: string | null;
   name: string;
   description: string | null;
   status: string;
+  projectDate: string | null;
+  projectLocation: string | null;
+  projectTag: string;
   client: { id: string; name: string };
   _count: { documents: number };
 }
@@ -26,7 +30,16 @@ export function Projects() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', status: 'active', clientId: '' });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    status: 'INCOMPLETE',
+    clientId: '',
+    projectId: '',
+    projectDate: '',
+    projectLocation: '',
+    projectTag: 'MISC'
+  });
 
   const load = () => {
     api.getProjects().then(setProjects);
@@ -36,13 +49,31 @@ export function Projects() {
   useEffect(() => { load(); }, []);
 
   const openNew = () => {
-    setForm({ name: '', description: '', status: 'active', clientId: clients[0]?.id || '' });
+    setForm({
+      name: '',
+      description: '',
+      status: 'INCOMPLETE',
+      clientId: clients[0]?.id || '',
+      projectId: '',
+      projectDate: '',
+      projectLocation: '',
+      projectTag: 'MISC'
+    });
     setEditing(null);
     setShowForm(true);
   };
 
   const openEdit = (p: Project) => {
-    setForm({ name: p.name, description: p.description || '', status: p.status, clientId: p.client.id });
+    setForm({
+      name: p.name,
+      description: p.description || '',
+      status: p.status,
+      clientId: p.client.id,
+      projectId: p.projectId || '',
+      projectDate: p.projectDate || '',
+      projectLocation: p.projectLocation || '',
+      projectTag: p.projectTag
+    });
     setEditing(p);
     setShowForm(true);
   };
@@ -66,8 +97,9 @@ export function Projects() {
   };
 
   const statusBadge = (status: string) => {
-    const cls = status === 'active' ? 'badge-active' : status === 'completed' ? 'badge-completed' : 'badge-on-hold';
-    return <span className={`badge ${cls}`}>{status}</span>;
+    const cls = status === 'INCOMPLETE' ? 'badge-on-hold' : status === 'COMPLETE_SOLVED' ? 'badge-completed' : 'badge-active';
+    const label = status === 'INCOMPLETE' ? 'Incomplete' : status === 'COMPLETE_SOLVED' ? 'Complete Solved' : 'Complete Not Solved';
+    return <span className={`badge ${cls}`}>{label}</span>;
   };
 
   return (
@@ -153,15 +185,35 @@ export function Projects() {
             <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </div>
           <div className="form-group">
+            <label className="form-label">Project ID</label>
+            <input className="form-input" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} placeholder="Optional unique identifier" />
+          </div>
+          <div className="form-group">
             <label className="form-label">Description</label>
             <textarea className="form-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
           <div className="form-group">
+            <label className="form-label">Project Date</label>
+            <input className="form-input" type="date" value={form.projectDate} onChange={(e) => setForm({ ...form, projectDate: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Project Location</label>
+            <input className="form-input" value={form.projectLocation} onChange={(e) => setForm({ ...form, projectLocation: e.target.value })} placeholder="Location" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Project Tag</label>
+            <select className="form-input" value={form.projectTag} onChange={(e) => setForm({ ...form, projectTag: e.target.value })}>
+              <option value="MISC">Misc</option>
+              <option value="MOZUK">Mozuk</option>
+              <option value="MOZUK_MARINE">Mozuk Marine</option>
+            </select>
+          </div>
+          <div className="form-group">
             <label className="form-label">Status</label>
             <select className="form-input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="active">Active</option>
-              <option value="on-hold">On Hold</option>
-              <option value="completed">Completed</option>
+              <option value="INCOMPLETE">Incomplete</option>
+              <option value="COMPLETE_SOLVED">Complete Solved</option>
+              <option value="COMPLETE_NOT_SOLVED">Complete Not Solved</option>
             </select>
           </div>
         </Modal>
