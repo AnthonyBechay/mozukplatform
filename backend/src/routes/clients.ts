@@ -37,9 +37,9 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, company, notes } = req.body;
+    const { name, email, phone, company, notes, customId } = req.body;
     const client = await prisma.client.create({
-      data: { name, email, phone, company, notes },
+      data: { name, email, phone, company, notes, customId },
     });
     res.status(201).json(client);
   } catch {
@@ -49,10 +49,10 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone, company, notes } = req.body;
+    const { name, email, phone, company, notes, customId } = req.body;
     const client = await prisma.client.update({
       where: { id: req.params.id },
-      data: { name, email, phone, company, notes },
+      data: { name, email, phone, company, notes, customId },
     });
     res.json(client);
   } catch {

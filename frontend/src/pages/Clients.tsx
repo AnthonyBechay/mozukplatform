@@ -81,6 +81,7 @@ export function Clients() {
             <table>
               <thead>
                 <tr>
+                  <th>ID</th>
                   <th>Name</th>
                   <th>Company</th>
                   <th>Email</th>
@@ -92,6 +93,7 @@ export function Clients() {
               <tbody>
                 {clients.map((c) => (
                   <tr key={c.id}>
+                    <td style={{ color: '#64748b' }}>{c.customId || '—'}</td>
                     <td>
                       <a onClick={() => navigate(`/clients/${c.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
                         {c.name}
