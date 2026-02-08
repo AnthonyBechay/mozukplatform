@@ -45,7 +45,7 @@ export function ClientDetail() {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    status: 'INCOMPLETE',
+    status: 'ON_GOING',
     projectId: '',
     projectDate: '',
     projectLocation: '',
@@ -72,7 +72,7 @@ export function ClientDetail() {
     setForm({
       name: '',
       description: '',
-      status: 'INCOMPLETE',
+      status: 'ON_GOING',
       projectId: '',
       projectDate: '',
       projectLocation: '',
@@ -233,9 +233,10 @@ export function ClientDetail() {
           <div className="form-group">
             <label className="form-label">Status</label>
             <select className="form-input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="INCOMPLETE">Incomplete</option>
+              <option value="ON_GOING">On Going</option>
               <option value="COMPLETE_SOLVED">Complete Solved</option>
               <option value="COMPLETE_NOT_SOLVED">Complete Not Solved</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
         </Modal>

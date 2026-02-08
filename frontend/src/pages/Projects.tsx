@@ -33,7 +33,7 @@ export function Projects() {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    status: 'INCOMPLETE',
+    status: 'ON_GOING',
     clientId: '',
     projectId: '',
     projectDate: '',
@@ -52,7 +52,7 @@ export function Projects() {
     setForm({
       name: '',
       description: '',
-      status: 'INCOMPLETE',
+      status: 'ON_GOING',
       clientId: clients[0]?.id || '',
       projectId: '',
       projectDate: '',
@@ -97,8 +97,8 @@ export function Projects() {
   };
 
   const statusBadge = (status: string) => {
-    const cls = status === 'INCOMPLETE' ? 'badge-on-hold' : status === 'COMPLETE_SOLVED' ? 'badge-completed' : 'badge-active';
-    const label = status === 'INCOMPLETE' ? 'Incomplete' : status === 'COMPLETE_SOLVED' ? 'Complete Solved' : 'Complete Not Solved';
+    const cls = status === 'ON_GOING' ? 'badge-on-hold' : status === 'COMPLETE_SOLVED' ? 'badge-completed' : status === 'COMPLETE_NOT_SOLVED' ? 'badge-active' : 'badge-danger';
+    const label = status === 'ON_GOING' ? 'On Going' : status === 'COMPLETE_SOLVED' ? 'Complete Solved' : status === 'COMPLETE_NOT_SOLVED' ? 'Complete Not Solved' : 'Cancelled';
     return <span className={`badge ${cls}`}>{label}</span>;
   };
 
@@ -211,9 +211,10 @@ export function Projects() {
           <div className="form-group">
             <label className="form-label">Status</label>
             <select className="form-input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="INCOMPLETE">Incomplete</option>
+              <option value="ON_GOING">On Going</option>
               <option value="COMPLETE_SOLVED">Complete Solved</option>
               <option value="COMPLETE_NOT_SOLVED">Complete Not Solved</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
         </Modal>

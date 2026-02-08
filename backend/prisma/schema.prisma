@@ -38,7 +38,8 @@ enum ProjectTag {
 enum ProjectStatus {
   COMPLETE_SOLVED
   COMPLETE_NOT_SOLVED
-  INCOMPLETE
+  ON_GOING
+  CANCELLED
 }
 
 enum DocumentType {
@@ -57,7 +58,7 @@ model Project {
   projectId       String?       @unique
   name            String
   description     String?
-  status          ProjectStatus @default(INCOMPLETE)
+  status          ProjectStatus @default(ON_GOING)
   projectDate     DateTime?
   projectLocation String?
   projectTag      ProjectTag    @default(MISC)
