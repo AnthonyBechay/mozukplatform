@@ -6,6 +6,7 @@ import { Clients } from './pages/Clients';
 import { ClientDetail } from './pages/ClientDetail';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
+import { Documents } from './pages/Documents';
 import { Layout } from './components/Layout';
 
 export function App() {
@@ -44,6 +45,7 @@ export function App() {
         <Route path="/clients/:id" element={<ClientDetail />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/documents" element={<Documents />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>
