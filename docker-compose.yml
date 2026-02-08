@@ -26,7 +26,7 @@ services:
     command:
       - sh
       - '-c'
-      - "npx prisma migrate deploy --schema=prisma/schema.prisma || echo 'Migration skipped' && node prisma/seed.js || echo 'Seed skipped' && node dist/index.js"
+      - "npx prisma migrate resolve --applied 0_init --schema=prisma/schema.prisma 2>/dev/null; npx prisma migrate deploy --schema=prisma/schema.prisma && node prisma/seed.js && node dist/index.js"
 
 volumes:
   backend_data:
