@@ -5,6 +5,13 @@ import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Plus, Pencil, Trash2, ChevronRight, FolderKanban } from 'lucide-react';
 
+interface Document {
+  id: string;
+  projectId: string;
+  amount: number | null;
+  paid: boolean | null;
+}
+
 interface Project {
   id: string;
   projectId: string | null;
@@ -32,6 +39,7 @@ export function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<Client | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState<Project | null>(null);
   const [form, setForm] = useState({
@@ -44,8 +52,18 @@ export function ClientDetail() {
     projectTag: 'MISC'
   });
 
-  const load = () => {
-    if (id) api.getClient(id).then(setClient);
+  const load = async () => {
+    if (!id) return;
+    try {
+      const [clientData, docsData] = await Promise.all([
+        api.getClient(id),
+        api.getDocuments(),
+      ]);
+      setClient(clientData);
+      setDocuments(docsData);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
   };
 
   useEffect(() => { load(); }, [id]);
@@ -82,6 +100,17 @@ export function ClientDetail() {
   const statusBadge = (status: string) => {
     const cls = status === 'active' ? 'badge-active' : status === 'completed' ? 'badge-completed' : 'badge-on-hold';
     return <span className={`badge ${cls}`}>{status}</span>;
+  };
+
+  // Calculate financial totals for each project
+  const getProjectFinancials = (projectId: string) => {
+    const projectDocs = documents.filter(doc => doc.projectId === projectId);
+    const totalInvoice = projectDocs.reduce((sum, doc) => sum + (doc.amount || 0), 0);
+    const totalPaid = projectDocs
+      .filter(doc => doc.paid === true)
+      .reduce((sum, doc) => sum + (doc.amount || 0), 0);
+    const balance = totalInvoice - totalPaid;
+    return { totalInvoice, totalPaid, balance };
   };
 
   return (
@@ -125,26 +154,37 @@ export function ClientDetail() {
                   <th>Name</th>
                   <th>Status</th>
                   <th>Description</th>
+                  <th>Total Invoice</th>
+                  <th>Total Paid</th>
+                  <th>Balance</th>
                   <th style={{ width: 80 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {client.projects.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
-                        {p.name}
-                      </a>
-                    </td>
-                    <td>{statusBadge(p.status)}</td>
-                    <td style={{ color: '#64748b' }}>{p.description || '—'}</td>
-                    <td>
-                      <button className="btn-icon danger" onClick={() => setDeleting(p)}>
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {client.projects.map((p) => {
+                  const financials = getProjectFinancials(p.id);
+                  return (
+                    <tr key={p.id}>
+                      <td>
+                        <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
+                          {p.name}
+                        </a>
+                      </td>
+                      <td>{statusBadge(p.status)}</td>
+                      <td style={{ color: '#64748b' }}>{p.description || '—'}</td>
+                      <td>${financials.totalInvoice.toFixed(2)}</td>
+                      <td>${financials.totalPaid.toFixed(2)}</td>
+                      <td style={{ color: financials.balance > 0 ? '#ef4444' : '#04a89a', fontWeight: 500 }}>
+                        ${financials.balance.toFixed(2)}
+                      </td>
+                      <td>
+                        <button className="btn-icon danger" onClick={() => setDeleting(p)}>
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
