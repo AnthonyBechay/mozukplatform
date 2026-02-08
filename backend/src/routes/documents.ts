@@ -19,6 +19,7 @@ function cleanDocumentData(body: any) {
   // Optional fields
   if (body.documentId) data.documentId = body.documentId;
   if (body.documentDate) data.documentDate = new Date(body.documentDate);
+  if (body.documentLink) data.documentLink = body.documentLink;
 
   // Invoice-specific fields (only if documentType is INVOICE)
   if (body.documentType === 'INVOICE') {
