@@ -21,7 +21,7 @@ services:
       sh -c "
         echo 'Waiting for database...' &&
         for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-          npx prisma db push --skip-generate --schema=prisma/schema.prisma && break
+          npx prisma db push --schema=prisma/schema.prisma && break
           echo \"DB not ready, retry $$i/15...\" && sleep 5
         done &&
         echo 'Seeding admin user...' &&

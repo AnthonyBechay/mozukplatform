@@ -16,17 +16,20 @@ RUN cd backend && npx prisma generate
 # Build
 RUN cd backend && pnpm build
 
-# Production — single stage, keep full node_modules tree
+# Production — clean install with npm to avoid pnpm symlink issues
 FROM node:22-alpine
 WORKDIR /app
 
-# Copy the entire workspace node_modules (pnpm hoists here)
-COPY --from=base /app/node_modules ./node_modules
-# Copy backend build output
-COPY --from=base /app/backend/dist ./dist
-# Copy prisma schema for db push
+# Copy package.json and install prod deps with npm (no symlink issues)
+COPY backend/package.json ./
+RUN npm install --omit=dev
+
+# Generate prisma client in production
 COPY --from=base /app/backend/prisma ./prisma
-COPY --from=base /app/backend/package.json ./
+RUN npx prisma generate
+
+# Copy build output and seed
+COPY --from=base /app/backend/dist ./dist
 
 RUN mkdir -p uploads
 
