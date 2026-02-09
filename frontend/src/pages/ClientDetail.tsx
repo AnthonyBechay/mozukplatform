@@ -185,8 +185,8 @@ export function ClientDetail() {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
                   <th>Project ID</th>
+                  <th>Name</th>
                   <th>Status</th>
                   <th>Description</th>
                   <th>Total Invoice</th>
@@ -200,12 +200,12 @@ export function ClientDetail() {
                   const financials = getProjectFinancials(p.id);
                   return (
                     <tr key={p.id}>
+                      <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.projectId || '—'}</td>
                       <td>
                         <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
                           {p.name}
                         </a>
                       </td>
-                      <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.projectId || '—'}</td>
                       <td>{statusBadge(p.status)}</td>
                       <td style={{ color: '#64748b' }}>{p.description || '—'}</td>
                       <td>${financials.totalInvoice.toFixed(2)}</td>
