@@ -58,6 +58,10 @@ export function Projects() {
       console.log('=== AUTO-INCREMENT DEBUG ===');
       console.log('Selected client ID:', form.clientId);
       console.log('Total projects loaded:', projects.length);
+      console.log('ALL PROJECTS:');
+      projects.forEach(p => {
+        console.log(`  - ${p.projectId} | Client DB ID: ${p.client?.id} | Client Custom ID: ${p.client?.customId}`);
+      });
       console.log('Client projects found:', clientProjects.length);
       console.log('Client project IDs:', clientProjects.map(p => p.projectId));
 
