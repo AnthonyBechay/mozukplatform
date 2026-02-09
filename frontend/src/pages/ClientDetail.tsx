@@ -42,6 +42,7 @@ export function ClientDetail() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [projectIdSuffix, setProjectIdSuffix] = useState('');
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -68,7 +69,19 @@ export function ClientDetail() {
 
   useEffect(() => { load(); }, [id]);
 
+  // Auto-generate composite project ID when client or suffix changes
+  useEffect(() => {
+    if (client && projectIdSuffix !== undefined) {
+      const clientId = client.customId || 'XXXX';
+      const fullProjectId = projectIdSuffix
+        ? `${clientId}-${projectIdSuffix}`
+        : `${clientId}-`;
+      setForm(prev => ({ ...prev, projectId: fullProjectId }));
+    }
+  }, [client, projectIdSuffix]);
+
   const openNew = () => {
+    setProjectIdSuffix('');
     setForm({
       name: '',
       description: '',
@@ -208,7 +221,48 @@ export function ClientDetail() {
           </div>
           <div className="form-group">
             <label className="form-label">Project ID</label>
-            <input className="form-input" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} placeholder="Optional unique identifier" />
+            {client ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Client ID - locked/greyed */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={client.customId || 'XXXX'}
+                  readOnly
+                  placeholder="Client ID"
+                  style={{
+                    flex: '1',
+                    backgroundColor: '#2a2a2a',
+                    color: '#888',
+                    cursor: 'not-allowed',
+                    textAlign: 'center'
+                  }}
+                />
+                <span style={{ color: '#888', fontSize: '20px', fontWeight: 'bold' }}>-</span>
+
+                {/* Project Suffix - editable */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={projectIdSuffix}
+                  onChange={(e) => setProjectIdSuffix(e.target.value)}
+                  placeholder="Project #"
+                  style={{ flex: '1', textAlign: 'center' }}
+                />
+              </div>
+            ) : (
+              <input
+                className="form-input"
+                value={form.projectId}
+                readOnly
+                placeholder="Loading client..."
+                style={{
+                  backgroundColor: '#2a2a2a',
+                  color: '#888',
+                  cursor: 'not-allowed'
+                }}
+              />
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Description</label>

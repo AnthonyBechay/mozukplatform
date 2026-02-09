@@ -30,6 +30,7 @@ export function Projects() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [projectIdSuffix, setProjectIdSuffix] = useState('');
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -48,7 +49,22 @@ export function Projects() {
 
   useEffect(() => { load(); }, []);
 
+  // Auto-generate composite project ID when client or suffix changes
+  useEffect(() => {
+    if (!editing && form.clientId && clients.length > 0) {
+      const selectedClient = clients.find(c => c.id === form.clientId);
+      if (selectedClient) {
+        const clientId = selectedClient.customId || 'XXXX';
+        const fullProjectId = projectIdSuffix
+          ? `${clientId}-${projectIdSuffix}`
+          : `${clientId}-`;
+        setForm(prev => ({ ...prev, projectId: fullProjectId }));
+      }
+    }
+  }, [form.clientId, projectIdSuffix, clients, editing]);
+
   const openNew = () => {
+    setProjectIdSuffix('');
     setForm({
       name: '',
       description: '',
@@ -174,7 +190,17 @@ export function Projects() {
         >
           <div className="form-group">
             <label className="form-label">Client *</label>
-            <select className="form-input" value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })}>
+            <select
+              className="form-input"
+              value={form.clientId}
+              onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              disabled={editing || (form.clientId && projectIdSuffix !== '')}
+              style={editing || (form.clientId && projectIdSuffix !== '') ? {
+                backgroundColor: '#2a2a2a',
+                color: '#888',
+                cursor: 'not-allowed'
+              } : {}}
+            >
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -186,7 +212,52 @@ export function Projects() {
           </div>
           <div className="form-group">
             <label className="form-label">Project ID</label>
-            <input className="form-input" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} placeholder="Optional unique identifier" />
+            {!editing && form.clientId && clients.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Client ID - locked/greyed */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={(() => {
+                    const selectedClient = clients.find((c: Client) => c.id === form.clientId);
+                    return selectedClient ? (selectedClient.customId || 'XXXX') : '';
+                  })()}
+                  readOnly
+                  placeholder="Client ID"
+                  style={{
+                    flex: '1',
+                    backgroundColor: '#2a2a2a',
+                    color: '#888',
+                    cursor: 'not-allowed',
+                    textAlign: 'center'
+                  }}
+                />
+                <span style={{ color: '#888', fontSize: '20px', fontWeight: 'bold' }}>-</span>
+
+                {/* Project Suffix - editable */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={projectIdSuffix}
+                  onChange={(e) => setProjectIdSuffix(e.target.value)}
+                  placeholder="Project #"
+                  style={{ flex: '1', textAlign: 'center' }}
+                />
+              </div>
+            ) : (
+              <input
+                className="form-input"
+                value={form.projectId}
+                onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+                placeholder={editing ? "Project ID" : "Select a client first"}
+                readOnly={!editing}
+                style={!editing ? {
+                  backgroundColor: '#2a2a2a',
+                  color: '#888',
+                  cursor: 'not-allowed'
+                } : {}}
+              />
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Description</label>
