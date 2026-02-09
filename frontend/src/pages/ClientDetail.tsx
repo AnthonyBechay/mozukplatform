@@ -147,6 +147,16 @@ export function ClientDetail() {
     return { totalInvoice, totalPaid, balance };
   };
 
+  // Calculate grand totals
+  const grandTotals = client?.projects.reduce((acc, project) => {
+    const financials = getProjectFinancials(project.id);
+    return {
+      totalInvoice: acc.totalInvoice + financials.totalInvoice,
+      totalPaid: acc.totalPaid + financials.totalPaid,
+      balance: acc.balance + financials.balance
+    };
+  }, { totalInvoice: 0, totalPaid: 0, balance: 0 }) || { totalInvoice: 0, totalPaid: 0, balance: 0 };
+
   return (
     <div>
       <div className="breadcrumb">
@@ -184,6 +194,24 @@ export function ClientDetail() {
           <div className="table-container">
             <table>
               <thead>
+                <tr style={{ borderBottom: 'none' }}>
+                  <th colSpan={4} style={{ borderBottom: 'none' }}></th>
+                  <th style={{ fontSize: '1.2em', color: '#fff', borderBottom: 'none', paddingBottom: '4px' }}>
+                    ${grandTotals.totalInvoice.toFixed(2)}
+                  </th>
+                  <th style={{ fontSize: '1.2em', color: '#fff', borderBottom: 'none', paddingBottom: '4px' }}>
+                    ${grandTotals.totalPaid.toFixed(2)}
+                  </th>
+                  <th style={{
+                    fontSize: '1.2em',
+                    color: grandTotals.balance > 0 ? '#ef4444' : '#04a89a',
+                    borderBottom: 'none',
+                    paddingBottom: '4px'
+                  }}>
+                    ${grandTotals.balance.toFixed(2)}
+                  </th>
+                  <th style={{ borderBottom: 'none' }}></th>
+                </tr>
                 <tr>
                   <th>Project ID</th>
                   <th>Name</th>
