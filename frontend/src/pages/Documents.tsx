@@ -82,10 +82,10 @@ export function Documents() {
             // Find all documents for this project
             const projectDocuments = documents.filter((d: Document) => d.projectId === formData.projectId);
 
-            // Extract document numbers (e.g., "DOC001" -> 1)
+            // Extract document numbers (e.g., "01" -> 1)
             const docNumbers = projectDocuments
                 .map((d: Document) => {
-                    const match = d.documentId?.match(/DOC(\d+)$/);
+                    const match = d.documentId?.match(/(\d+)$/);
                     return match ? parseInt(match[1], 10) : 0;
                 })
                 .filter((n: number) => n > 0);
@@ -95,8 +95,8 @@ export function Documents() {
                 ? Math.max(...docNumbers) + 1
                 : 1;
 
-            // Set suffix (e.g., "DOC001")
-            setDocumentIdSuffix(`DOC${String(nextNumber).padStart(3, '0')}`);
+            // Set suffix (e.g., "01")
+            setDocumentIdSuffix(String(nextNumber).padStart(2, '0'));
         }
     }, [formData.projectId, editing, documents, documentIdSuffix]);
 

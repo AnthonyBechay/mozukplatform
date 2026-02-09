@@ -55,10 +55,10 @@ export function Projects() {
       // Find all projects for this client
       const clientProjects = projects.filter(p => p.client.id === form.clientId);
 
-      // Extract project numbers (e.g., "P001" -> 1)
+      // Extract project numbers (e.g., "001" -> 1)
       const projectNumbers = clientProjects
         .map(p => {
-          const match = p.projectId?.match(/P(\d+)$/);
+          const match = p.projectId?.match(/(\d+)$/);
           return match ? parseInt(match[1], 10) : 0;
         })
         .filter(n => n > 0);
@@ -68,8 +68,8 @@ export function Projects() {
         ? Math.max(...projectNumbers) + 1
         : 1;
 
-      // Set suffix (e.g., "P001")
-      setProjectIdSuffix(`P${String(nextNumber).padStart(3, '0')}`);
+      // Set suffix (e.g., "001")
+      setProjectIdSuffix(String(nextNumber).padStart(3, '0'));
     }
   }, [form.clientId, editing, clients, projects, projectIdSuffix]);
 
