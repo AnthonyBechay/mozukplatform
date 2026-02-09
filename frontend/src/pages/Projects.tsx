@@ -49,6 +49,30 @@ export function Projects() {
 
   useEffect(() => { load(); }, []);
 
+  // Auto-increment project ID suffix when client is selected
+  useEffect(() => {
+    if (!editing && form.clientId && clients.length > 0 && projectIdSuffix === '' && projects.length >= 0) {
+      // Find all projects for this client
+      const clientProjects = projects.filter(p => p.client.id === form.clientId);
+
+      // Extract project numbers (e.g., "P001" -> 1)
+      const projectNumbers = clientProjects
+        .map(p => {
+          const match = p.projectId?.match(/P(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => n > 0);
+
+      // Get next number
+      const nextNumber = projectNumbers.length > 0
+        ? Math.max(...projectNumbers) + 1
+        : 1;
+
+      // Set suffix (e.g., "P001")
+      setProjectIdSuffix(`P${String(nextNumber).padStart(3, '0')}`);
+    }
+  }, [form.clientId, editing, clients, projects, projectIdSuffix]);
+
   // Auto-generate composite project ID when client or suffix changes
   useEffect(() => {
     if (!editing && form.clientId && clients.length > 0) {

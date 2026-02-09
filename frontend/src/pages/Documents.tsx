@@ -76,6 +76,30 @@ export function Documents() {
         }
     };
 
+    // Auto-increment document ID suffix when project is selected
+    useEffect(() => {
+        if (!editing && formData.projectId && documentIdSuffix === '' && documents.length >= 0) {
+            // Find all documents for this project
+            const projectDocuments = documents.filter((d: Document) => d.projectId === formData.projectId);
+
+            // Extract document numbers (e.g., "DOC001" -> 1)
+            const docNumbers = projectDocuments
+                .map((d: Document) => {
+                    const match = d.documentId?.match(/DOC(\d+)$/);
+                    return match ? parseInt(match[1], 10) : 0;
+                })
+                .filter((n: number) => n > 0);
+
+            // Get next number
+            const nextNumber = docNumbers.length > 0
+                ? Math.max(...docNumbers) + 1
+                : 1;
+
+            // Set suffix (e.g., "DOC001")
+            setDocumentIdSuffix(`DOC${String(nextNumber).padStart(3, '0')}`);
+        }
+    }, [formData.projectId, editing, documents, documentIdSuffix]);
+
     // Auto-generate composite document ID when project or suffix changes
     useEffect(() => {
         if (!editing && formData.projectId && projects.length > 0) {

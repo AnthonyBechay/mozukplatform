@@ -69,6 +69,27 @@ export function ClientDetail() {
 
   useEffect(() => { load(); }, [id]);
 
+  // Auto-increment project ID suffix when client is loaded
+  useEffect(() => {
+    if (client && projectIdSuffix === '' && client.projects) {
+      // Extract project numbers (e.g., "P001" -> 1)
+      const projectNumbers = client.projects
+        .map((p: any) => {
+          const match = p.projectId?.match(/P(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter((n: number) => n > 0);
+
+      // Get next number
+      const nextNumber = projectNumbers.length > 0
+        ? Math.max(...projectNumbers) + 1
+        : 1;
+
+      // Set suffix (e.g., "P001")
+      setProjectIdSuffix(`P${String(nextNumber).padStart(3, '0')}`);
+    }
+  }, [client, projectIdSuffix]);
+
   // Auto-generate composite project ID when client or suffix changes
   useEffect(() => {
     if (client && projectIdSuffix !== undefined) {
