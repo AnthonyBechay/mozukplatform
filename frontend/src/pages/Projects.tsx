@@ -51,7 +51,7 @@ export function Projects() {
 
   // Auto-increment project ID suffix when client is selected
   useEffect(() => {
-    if (!editing && form.clientId && clients.length > 0 && projectIdSuffix === '' && projects.length >= 0) {
+    if (!editing && form.clientId && clients.length > 0 && projects.length >= 0) {
       // Find all projects for this client
       const clientProjects = projects.filter(p => p.client.id === form.clientId);
 
@@ -95,7 +95,7 @@ export function Projects() {
       // Set suffix (e.g., "001")
       setProjectIdSuffix(String(nextNumber).padStart(3, '0'));
     }
-  }, [form.clientId, editing, clients, projects, projectIdSuffix]);
+  }, [form.clientId, editing, clients, projects]);  // Removed projectIdSuffix from dependencies!
 
   // Auto-generate composite project ID when client or suffix changes
   useEffect(() => {
