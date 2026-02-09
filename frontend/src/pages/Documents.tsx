@@ -432,7 +432,9 @@ export function Documents() {
                                                 className="form-input"
                                                 value={(() => {
                                                     const selectedProject = projects.find((p: Project) => p.id === formData.projectId);
-                                                    return selectedProject ? (selectedProject.projectId || 'XXXX') : '';
+                                                    if (!selectedProject || !selectedProject.projectId) return '';
+                                                    const parts = selectedProject.projectId.split('-');
+                                                    return parts.length > 1 ? parts[parts.length - 1] : selectedProject.projectId;
                                                 })()}
                                                 readOnly
                                                 placeholder="Project ID"
