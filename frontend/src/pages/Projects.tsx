@@ -218,8 +218,8 @@ export function Projects() {
               className="form-input"
               value={form.clientId}
               onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-              disabled={editing || (form.clientId && projectIdSuffix !== '')}
-              style={editing || (form.clientId && projectIdSuffix !== '') ? {
+              disabled={editing}
+              style={editing ? {
                 backgroundColor: '#2a2a2a',
                 color: '#888',
                 cursor: 'not-allowed'
