@@ -55,18 +55,32 @@ export function Projects() {
       // Find all projects for this client
       const clientProjects = projects.filter(p => p.client.id === form.clientId);
 
+      console.log('=== AUTO-INCREMENT DEBUG ===');
+      console.log('Selected client ID:', form.clientId);
+      console.log('Total projects loaded:', projects.length);
+      console.log('Client projects found:', clientProjects.length);
+      console.log('Client project IDs:', clientProjects.map(p => p.projectId));
+
       // Extract project numbers from suffix after dash (e.g., "1001-003" -> 3)
       const projectNumbers = clientProjects
         .map(p => {
           const match = p.projectId?.match(/-(\d+)$/);  // Match digits after last dash
-          return match ? parseInt(match[1], 10) : 0;
+          const num = match ? parseInt(match[1], 10) : 0;
+          console.log(`  Project ${p.projectId} -> extracted number: ${num}`);
+          return num;
         })
         .filter(n => n > 0);
+
+      console.log('Extracted numbers:', projectNumbers);
+      console.log('Max number:', projectNumbers.length > 0 ? Math.max(...projectNumbers) : 0);
 
       // Get next number
       const nextNumber = projectNumbers.length > 0
         ? Math.max(...projectNumbers) + 1
         : 1;
+
+      console.log('Next number will be:', nextNumber);
+      console.log('=== END DEBUG ===');
 
       // Set suffix (e.g., "001")
       setProjectIdSuffix(String(nextNumber).padStart(3, '0'));
