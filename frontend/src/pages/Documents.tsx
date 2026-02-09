@@ -510,6 +510,8 @@ export function Documents() {
                                     >
                                         <option value="INVOICE">Invoice</option>
                                         <option value="REPORT">Report</option>
+                                        <option value="DRAWING">Drawing</option>
+                                        <option value="LETTER">Letter</option>
                                         <option value="OTHERS">Others</option>
                                     </select>
                                 </div>

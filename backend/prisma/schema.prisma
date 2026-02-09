@@ -45,6 +45,8 @@ enum ProjectStatus {
 enum DocumentType {
   INVOICE
   REPORT
+  DRAWING
+  LETTER
   OTHERS
 }
 
