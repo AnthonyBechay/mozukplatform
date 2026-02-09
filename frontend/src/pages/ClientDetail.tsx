@@ -186,6 +186,7 @@ export function ClientDetail() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Project ID</th>
                   <th>Status</th>
                   <th>Description</th>
                   <th>Total Invoice</th>
@@ -204,6 +205,7 @@ export function ClientDetail() {
                           {p.name}
                         </a>
                       </td>
+                      <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.projectId || '—'}</td>
                       <td>{statusBadge(p.status)}</td>
                       <td style={{ color: '#64748b' }}>{p.description || '—'}</td>
                       <td>${financials.totalInvoice.toFixed(2)}</td>
