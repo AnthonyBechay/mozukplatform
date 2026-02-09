@@ -72,10 +72,10 @@ export function ClientDetail() {
   // Auto-increment project ID suffix when client is loaded
   useEffect(() => {
     if (client && projectIdSuffix === '' && client.projects) {
-      // Extract project numbers (e.g., "001" -> 1)
+      // Extract project numbers from suffix after dash (e.g., "1001-003" -> 3)
       const projectNumbers = client.projects
         .map((p: any) => {
-          const match = p.projectId?.match(/(\d+)$/);
+          const match = p.projectId?.match(/-(\d+)$/);  // Match digits after last dash
           return match ? parseInt(match[1], 10) : 0;
         })
         .filter((n: number) => n > 0);

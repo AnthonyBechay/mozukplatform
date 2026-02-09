@@ -82,10 +82,10 @@ export function Documents() {
             // Find all documents for this project
             const projectDocuments = documents.filter((d: Document) => d.projectId === formData.projectId);
 
-            // Extract document numbers (e.g., "01" -> 1)
+            // Extract document numbers from suffix after last dash (e.g., "1001-002-05" -> 5)
             const docNumbers = projectDocuments
                 .map((d: Document) => {
-                    const match = d.documentId?.match(/(\d+)$/);
+                    const match = d.documentId?.match(/-(\d+)$/);  // Match digits after last dash
                     return match ? parseInt(match[1], 10) : 0;
                 })
                 .filter((n: number) => n > 0);

@@ -55,10 +55,10 @@ export function Projects() {
       // Find all projects for this client
       const clientProjects = projects.filter(p => p.client.id === form.clientId);
 
-      // Extract project numbers (e.g., "001" -> 1)
+      // Extract project numbers from suffix after dash (e.g., "1001-003" -> 3)
       const projectNumbers = clientProjects
         .map(p => {
-          const match = p.projectId?.match(/(\d+)$/);
+          const match = p.projectId?.match(/-(\d+)$/);  // Match digits after last dash
           return match ? parseInt(match[1], 10) : 0;
         })
         .filter(n => n > 0);
