@@ -57,6 +57,10 @@ export function Projects() {
 
       console.log('=== AUTO-INCREMENT DEBUG ===');
       console.log('Selected client ID:', form.clientId);
+      console.log('ALL CLIENTS:');
+      clients.forEach(c => {
+        console.log(`  - ${c.name} | DB ID: ${c.id} | Custom ID: ${c.customId}`);
+      });
       console.log('Total projects loaded:', projects.length);
       console.log('ALL PROJECTS:');
       projects.forEach(p => {
