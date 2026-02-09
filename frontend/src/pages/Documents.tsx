@@ -108,8 +108,8 @@ export function Documents() {
                 const clientId = selectedProject.client.customId || 'XXXX';
                 const projId = selectedProject.projectId || 'XXXX';
                 const fullDocId = documentIdSuffix
-                    ? `${clientId}-${projId}-${documentIdSuffix}`
-                    : `${clientId}-${projId}-`;
+                    ? `${projId}-${documentIdSuffix}`
+                    : `${projId}-`;
                 setFormData(prev => ({ ...prev, documentId: fullDocId }));
             }
         }
