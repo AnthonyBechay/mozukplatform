@@ -61,6 +61,8 @@ export function Projects() {
       clients.forEach(c => {
         console.log(`  - ${c.name} | DB ID: ${c.id} | Custom ID: ${c.customId}`);
       });
+      const selectedClient = clients.find(c => c.id === form.clientId);
+      console.log('SELECTED CLIENT:', selectedClient ? `${selectedClient.name} | DB ID: ${selectedClient.id} | Custom ID: ${selectedClient.customId}` : 'NONE');
       console.log('Total projects loaded:', projects.length);
       console.log('ALL PROJECTS:');
       projects.forEach(p => {
