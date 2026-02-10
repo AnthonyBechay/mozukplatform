@@ -72,32 +72,34 @@ export function Dashboard() {
         const activeProjects = projects.filter((p: any) => p.status !== 'COMPLETED' && p.status !== 'COMPLETE_SOLVED').length;
         const completedProjects = projects.length - activeProjects;
 
-        // Get Recent Projects (Top 5 by createdAt/updatedAt)
-        // Note: Assuming projects have createdAt. If not, we might need to rely on order or ID.
-        // For now, taking the last 5 since usually API returns them in order or we sort.
-        const sortedProjects = [...projects].sort((a: any, b: any) =>
-          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-        ).slice(0, 5);
+        // Get Recent Projects (Top 5 by projectDate)
+        const sortedProjects = [...projects].sort((a: any, b: any) => {
+          const dateA = new Date(a.projectDate || a.createdAt).getTime();
+          const dateB = new Date(b.projectDate || b.createdAt).getTime();
+          return dateB - dateA;
+        }).slice(0, 5);
 
         const recentProjs = sortedProjects.map((p: any) => ({
           id: p.id,
           name: p.name,
           clientName: p.client?.name || 'Unknown Client',
           status: p.status,
-          updatedAt: p.createdAt // Using createdAt as a proxy for interesting date
+          date: p.projectDate || p.createdAt
         }));
 
-        // Get Recent Documents (Top 5)
-        const sortedDocs = [...documents].sort((a: any, b: any) =>
-          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-        ).slice(0, 5);
+        // Get Recent Documents (Top 5 by documentDate)
+        const sortedDocs = [...documents].sort((a: any, b: any) => {
+          const dateA = new Date(a.documentDate || a.createdAt).getTime();
+          const dateB = new Date(b.documentDate || b.createdAt).getTime();
+          return dateB - dateA;
+        }).slice(0, 5);
 
         const recentDocs = sortedDocs.map((d: any) => ({
           id: d.id,
           name: d.documentName,
           projectName: d.project?.name || 'Unknown Project',
           type: d.documentType,
-          date: d.createdAt
+          date: d.documentDate || d.createdAt
         }));
 
         setStats({
@@ -211,7 +213,7 @@ export function Dashboard() {
             <button className="btn-sm btn-secondary" onClick={() => navigate('/projects')}>View All</button>
           </div>
           <div className="table-container">
-            <table>
+            <table style={{ minWidth: 'auto' }}>
               <thead>
                 <tr>
                   <th>Project</th>
@@ -227,7 +229,7 @@ export function Dashboard() {
                     <tr key={p.id}>
                       <td>
                         <div style={{ fontWeight: 500 }}>{p.name}</div>
-                        <div style={{ fontSize: '11px', color: '#666' }}>{new Date(p.updatedAt).toLocaleDateString()}</div>
+                        <div style={{ fontSize: '11px', color: '#666' }}>{new Date(p.date).toLocaleDateString()}</div>
                       </td>
                       <td>{p.clientName}</td>
                       <td>{statusBadge(p.status)}</td>
@@ -248,7 +250,7 @@ export function Dashboard() {
             <button className="btn-sm btn-secondary" onClick={() => navigate('/documents')}>View All</button>
           </div>
           <div className="table-container">
-            <table>
+            <table style={{ minWidth: 'auto' }}>
               <thead>
                 <tr>
                   <th>Document</th>
