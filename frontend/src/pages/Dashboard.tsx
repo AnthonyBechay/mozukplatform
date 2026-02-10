@@ -69,7 +69,8 @@ export function Dashboard() {
         const outstanding = totalRevenue - totalCollected;
 
         // Calculate Project Stats
-        const activeProjects = projects.filter((p: any) => p.status !== 'COMPLETED' && p.status !== 'COMPLETE_SOLVED').length;
+        // Calculate Project Stats
+        const activeProjects = projects.filter((p: any) => p.status === 'ON_GOING').length;
         const completedProjects = projects.length - activeProjects;
 
         // Get Recent Projects (Top 5 by projectDate)
