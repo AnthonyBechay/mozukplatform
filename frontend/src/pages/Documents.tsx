@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
-import { FileText, Plus, X, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { FileText, Plus, X, Edit2, Trash2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Document {
     id: string;
@@ -41,6 +41,10 @@ export function Documents() {
     const [editing, setEditing] = useState<Document | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [documentIdSuffix, setDocumentIdSuffix] = useState('');
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [formData, setFormData] = useState({
         projectId: '',
         documentId: '',
@@ -285,7 +289,7 @@ export function Documents() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {documents.map((doc) => (
+                                {documents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((doc) => (
                                     <tr key={doc.id}>
                                         <td>{doc.documentId || '-'}</td>
                                         <td>{doc.documentName}</td>
@@ -354,6 +358,31 @@ export function Documents() {
                 )}
             </div>
 
+            {/* Pagination Controls */}
+            {documents.length > itemsPerPage && (
+                <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                        <ChevronLeft size={16} /> Previous
+                    </button>
+                    <span style={{ color: '#888' }}>
+                        Page <strong style={{ color: '#fff' }}>{currentPage}</strong> of {Math.ceil(documents.length / itemsPerPage)}
+                    </span>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => setCurrentPage(p => Math.min(Math.ceil(documents.length / itemsPerPage), p + 1))}
+                        disabled={currentPage === Math.ceil(documents.length / itemsPerPage)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                        Next <ChevronRight size={16} />
+                    </button>
+                </div>
+            )}
+
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal">
@@ -396,7 +425,7 @@ export function Documents() {
                                         <option value="">Select a project</option>
                                         {projects.map((p) => (
                                             <option key={p.id} value={p.id}>
-                                                {p.name}
+                                                {p.projectId ? `${p.projectId} - ${p.name}` : p.name}
                                             </option>
                                         ))}
                                     </select>

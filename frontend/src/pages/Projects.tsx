@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -31,6 +32,10 @@ export function Projects() {
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
   const [projectIdSuffix, setProjectIdSuffix] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -197,7 +202,7 @@ export function Projects() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map((p) => (
+                {projects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                   <tr key={p.id}>
                     <td>
                       <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
@@ -224,6 +229,31 @@ export function Projects() {
           </div>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {projects.length > itemsPerPage && (
+        <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            <ChevronLeft size={16} /> Previous
+          </button>
+          <span style={{ color: '#888' }}>
+            Page <strong style={{ color: '#fff' }}>{currentPage}</strong> of {Math.ceil(projects.length / itemsPerPage)}
+          </span>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(projects.length / itemsPerPage), p + 1))}
+            disabled={currentPage === Math.ceil(projects.length / itemsPerPage)}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <Modal
