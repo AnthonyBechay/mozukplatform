@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Plus, Pencil, Trash2, ChevronRight, FolderKanban } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronRight, FolderKanban, DollarSign } from 'lucide-react';
 
 interface Document {
   id: string;
@@ -157,6 +157,13 @@ export function ClientDetail() {
     };
   }, { totalInvoice: 0, totalPaid: 0, balance: 0 }) || { totalInvoice: 0, totalPaid: 0, balance: 0 };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   return (
     <div>
       <div className="breadcrumb">
@@ -183,6 +190,30 @@ export function ClientDetail() {
         </div>
       )}
 
+      {/* Financial Overview Row */}
+      <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <DollarSign size={20} color="#04a89a" /> Financial Overview
+      </h3>
+      <div className="stats-grid" style={{ marginBottom: '24px' }}>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(4, 168, 154, 0.1) 0%, rgba(4, 168, 154, 0.05) 100%)', borderColor: 'rgba(4, 168, 154, 0.2)' }}>
+          <div className="stat-label">Total Amount</div>
+          <div className="stat-value" style={{ color: '#04a89a' }}>{formatCurrency(grandTotals.totalInvoice)}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Across {client.projects.length} projects</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Paid Balance</div>
+          <div className="stat-value">{formatCurrency(grandTotals.totalPaid)}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Collected payments</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Remaining Balance</div>
+          <div className="stat-value" style={{ color: grandTotals.balance > 0 ? '#ef4444' : '#64748b' }}>
+            {formatCurrency(grandTotals.balance)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Pending payments</div>
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-header">Projects ({client.projects.length})</div>
         {client.projects.length === 0 ? (
@@ -194,32 +225,14 @@ export function ClientDetail() {
           <div className="table-container">
             <table>
               <thead>
-                <tr style={{ borderBottom: 'none' }}>
-                  <th colSpan={4} style={{ borderBottom: 'none' }}></th>
-                  <th style={{ fontSize: '1.2em', color: '#fff', borderBottom: 'none', paddingBottom: '4px' }}>
-                    ${grandTotals.totalInvoice.toFixed(2)}
-                  </th>
-                  <th style={{ fontSize: '1.2em', color: '#fff', borderBottom: 'none', paddingBottom: '4px' }}>
-                    ${grandTotals.totalPaid.toFixed(2)}
-                  </th>
-                  <th style={{
-                    fontSize: '1.2em',
-                    color: grandTotals.balance > 0 ? '#ef4444' : '#04a89a',
-                    borderBottom: 'none',
-                    paddingBottom: '4px'
-                  }}>
-                    ${grandTotals.balance.toFixed(2)}
-                  </th>
-                  <th style={{ borderBottom: 'none' }}></th>
-                </tr>
                 <tr>
                   <th>Project ID</th>
                   <th>Name</th>
                   <th>Status</th>
                   <th>Description</th>
-                  <th>Total Invoice</th>
-                  <th>Total Paid</th>
-                  <th>Balance</th>
+                  <th>Total Amount</th>
+                  <th>Paid Balance</th>
+                  <th>Remaining</th>
                   <th style={{ width: 80 }}>Actions</th>
                 </tr>
               </thead>
@@ -227,22 +240,26 @@ export function ClientDetail() {
                 {client.projects.map((p) => {
                   const financials = getProjectFinancials(p.id);
                   return (
-                    <tr key={p.id}>
+                    <tr 
+                      key={p.id}
+                      onClick={() => navigate(`/projects/${p.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.projectId || '—'}</td>
                       <td>
-                        <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
+                        <span style={{ fontWeight: 500 }}>
                           {p.name}
-                        </a>
+                        </span>
                       </td>
                       <td>{statusBadge(p.status)}</td>
-                      <td style={{ color: '#64748b' }}>{p.description || '—'}</td>
-                      <td>${financials.totalInvoice.toFixed(2)}</td>
-                      <td>${financials.totalPaid.toFixed(2)}</td>
+                      <td style={{ color: '#64748b' }}>{p.description ? (p.description.length > 50 ? p.description.substring(0, 50) + '...' : p.description) : '—'}</td>
+                      <td>{formatCurrency(financials.totalInvoice)}</td>
+                      <td>{formatCurrency(financials.totalPaid)}</td>
                       <td style={{ color: financials.balance > 0 ? '#ef4444' : '#04a89a', fontWeight: 500 }}>
-                        ${financials.balance.toFixed(2)}
+                        {formatCurrency(financials.balance)}
                       </td>
                       <td>
-                        <button className="btn-icon danger" onClick={() => setDeleting(p)}>
+                        <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); setDeleting(p); }}>
                           <Trash2 size={15} />
                         </button>
                       </td>
