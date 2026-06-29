@@ -6,6 +6,8 @@ import { authRouter } from './routes/auth';
 import { clientRouter } from './routes/clients';
 import { projectRouter } from './routes/projects';
 import { documentRouter } from './routes/documents';
+import { paymentRouter } from './routes/payments';
+import { paymentCategoryRouter } from './routes/paymentCategories';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +21,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/clients', clientRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/documents', documentRouter);
+app.use('/api/payments', paymentRouter);
+app.use('/api/payment-categories', paymentCategoryRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

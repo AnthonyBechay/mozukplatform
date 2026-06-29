@@ -66,4 +66,18 @@ export const api = {
     request(`/documents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteDocument: (id: string) =>
     request(`/documents/${id}`, { method: 'DELETE' }),
+
+  // Payments
+  getPayments: () => request('/payments'),
+  createPayment: (data: any) =>
+    request('/payments', { method: 'POST', body: JSON.stringify(data) }),
+  deletePayment: (id: string) =>
+    request(`/payments/${id}`, { method: 'DELETE' }),
+
+  // Payment Categories
+  getPaymentCategories: () => request('/payment-categories'),
+  createPaymentCategory: (data: any) =>
+    request('/payment-categories', { method: 'POST', body: JSON.stringify(data) }),
+  deletePaymentCategory: (id: string) =>
+    request(`/payment-categories/${id}`, { method: 'DELETE' }),
 };

@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Clock,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Tag
 } from 'lucide-react';
 
 interface Stats {
@@ -22,6 +23,8 @@ interface Stats {
   totalRevenue: number;
   totalCollected: number;
   outstanding: number;
+  totalExpenses: number;
+  netProfit: number;
 }
 
 interface RecentProject {
@@ -50,15 +53,24 @@ export function Dashboard() {
     documents: 0,
     totalRevenue: 0,
     totalCollected: 0,
-    outstanding: 0
+    outstanding: 0,
+    totalExpenses: 0,
+    netProfit: 0
   });
+  const [categoriesBreakdown, setCategoriesBreakdown] = useState<{ name: string; amount: number; count: number }[]>([]);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const [recentDocuments, setRecentDocuments] = useState<RecentDocument[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.getClients(), api.getProjects(), api.getDocuments()]).then(
-      ([clients, projects, documents]) => {
+    Promise.all([
+      api.getClients(),
+      api.getProjects(),
+      api.getDocuments(),
+      api.getPayments(),
+      api.getPaymentCategories()
+    ]).then(
+      ([clients, projects, documents, payments, categories]) => {
 
         // Calculate Financials
         const invoices = documents.filter((d: any) => d.documentType === 'INVOICE');
@@ -67,6 +79,18 @@ export function Dashboard() {
           .filter((doc: any) => doc.paid === true)
           .reduce((sum: number, doc: any) => sum + (doc.amount || 0), 0);
         const outstanding = totalRevenue - totalCollected;
+
+        const totalExpenses = payments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        const netProfit = totalRevenue - totalExpenses;
+
+        const catsBreakdown = categories.map((cat: any) => ({
+          name: cat.name,
+          amount: cat.totalPayments || 0,
+          count: cat.paymentsCount || 0
+        })).filter((cat: any) => cat.amount > 0)
+           .sort((a: any, b: any) => b.amount - a.amount);
+
+        setCategoriesBreakdown(catsBreakdown);
 
         // Calculate Project Stats
         // Calculate Project Stats
@@ -111,7 +135,9 @@ export function Dashboard() {
           documents: documents.length,
           totalRevenue,
           totalCollected,
-          outstanding
+          outstanding,
+          totalExpenses,
+          netProfit
         });
         setRecentProjects(recentProjs);
         setRecentDocuments(recentDocs);
@@ -177,6 +203,16 @@ export function Dashboard() {
             {formatCurrency(stats.outstanding)}
           </div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Pending Payments</div>
+        </div>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+          <div className="stat-label">Total Expenses</div>
+          <div className="stat-value" style={{ color: '#ef4444' }}>{formatCurrency(stats.totalExpenses)}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Outgoing Payments</div>
+        </div>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
+          <div className="stat-label">Net Profit</div>
+          <div className="stat-value" style={{ color: stats.netProfit >= 0 ? '#3b82f6' : '#ef4444' }}>{formatCurrency(stats.netProfit)}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Revenue - Expenses</div>
         </div>
       </div>
 
@@ -281,6 +317,44 @@ export function Dashboard() {
                         </span>
                       </td>
                       <td>{new Date(d.date).toLocaleDateString()}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Expenses by Category */}
+        <div className="card">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Tag size={16} /> Expenses by Category
+            </span>
+            <button className="btn-sm btn-secondary" onClick={() => navigate('/payments')}>View All</button>
+          </div>
+          <div className="table-container">
+            <table style={{ minWidth: 'auto' }}>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th style={{ textAlign: 'right' }}>Total Payments</th>
+                  <th style={{ textAlign: 'right' }}>Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoriesBreakdown.length === 0 ? (
+                  <tr><td colSpan={3} style={{ textAlign: 'center', color: '#666' }}>No expenses recorded yet</td></tr>
+                ) : (
+                  categoriesBreakdown.map(cat => (
+                    <tr key={cat.name}>
+                      <td>
+                        <span style={{ fontWeight: 500 }}>{cat.name}</span>
+                      </td>
+                      <td style={{ textAlign: 'right', color: '#ef4444', fontWeight: 500 }}>
+                        -{formatCurrency(cat.amount)}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>{cat.count}</td>
                     </tr>
                   ))
                 )}
