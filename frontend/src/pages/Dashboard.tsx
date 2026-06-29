@@ -157,13 +157,9 @@ export function Dashboard() {
   };
 
   const statusBadge = (status: string) => {
-    let colorClass = 'badge-on-hold'; // Default
-    if (status === 'ON_GOING' || status === 'active') colorClass = 'badge-active';
-    if (status === 'COMPLETED' || status === 'COMPLETE_SOLVED') colorClass = 'badge-completed';
-
-    // Simplify status text for display
-    const text = status.replace(/_/g, ' ');
-    return <span className={`badge ${colorClass}`}>{text}</span>;
+    const cls = status === 'ON_GOING' ? 'badge-on-hold' : status === 'COMPLETE_SOLVED' ? 'badge-completed' : status === 'COMPLETE_NOT_SOLVED' ? 'badge-active' : 'badge-danger';
+    const label = status === 'ON_GOING' ? 'On Going' : status === 'COMPLETE_SOLVED' ? 'Complete Solved' : status === 'COMPLETE_NOT_SOLVED' ? 'Complete Not Solved' : status === 'CANCELLED' ? 'Cancelled' : status;
+    return <span className={`badge ${cls}`}>{label}</span>;
   };
 
   if (loading) {

@@ -132,8 +132,9 @@ export function ClientDetail() {
   if (!client) return null;
 
   const statusBadge = (status: string) => {
-    const cls = status === 'active' ? 'badge-active' : status === 'completed' ? 'badge-completed' : 'badge-on-hold';
-    return <span className={`badge ${cls}`}>{status}</span>;
+    const cls = status === 'ON_GOING' ? 'badge-on-hold' : status === 'COMPLETE_SOLVED' ? 'badge-completed' : status === 'COMPLETE_NOT_SOLVED' ? 'badge-active' : 'badge-danger';
+    const label = status === 'ON_GOING' ? 'On Going' : status === 'COMPLETE_SOLVED' ? 'Complete Solved' : status === 'COMPLETE_NOT_SOLVED' ? 'Complete Not Solved' : status === 'CANCELLED' ? 'Cancelled' : status;
+    return <span className={`badge ${cls}`}>{label}</span>;
   };
 
   // Calculate financial totals for each project
