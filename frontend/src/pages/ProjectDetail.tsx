@@ -61,20 +61,14 @@ export function ProjectDetail() {
   if (!project) return <div>Project not found</div>;
 
   const statusBadge = (status: string) => {
-    const cls = status === 'SUBMITTED' ? 'badge-completed' : 'badge-on-hold';
+    const cls = status === 'SUBMITTED' ? 'badge-active' : '';
     const label = status === 'SUBMITTED' ? 'Submitted' : status === 'NOT_SUBMITTED' ? 'Not Submitted' : status.replace('_', ' ');
     return <span className={`badge ${cls}`}>{label}</span>;
   };
 
   const typeBadge = (type: string) => {
-    const colors: Record<string, string> = {
-      INVOICE: 'badge-active',
-      REPORT: 'badge-completed',
-      DRAWING: 'badge-pending',
-      LETTER: 'badge-on-hold',
-    };
     const label = type === 'OTHERS' ? 'Others' : type.charAt(0) + type.slice(1).toLowerCase();
-    return <span className={`badge ${colors[type] || ''}`}>{label}</span>;
+    return <span className={`badge badge-active`}>{label}</span>;
   };
 
   return (

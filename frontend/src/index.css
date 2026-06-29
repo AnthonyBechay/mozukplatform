@@ -375,31 +375,39 @@ select.form-input {
   font-weight: 500;
   border-radius: 100px;
   white-space: nowrap;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .badge-active {
   background: rgba(4, 168, 154, 0.15);
   color: #04a89a;
+  border: 1px solid rgba(4, 168, 154, 0.2);
 }
 
 .badge-completed {
   background: rgba(4, 168, 154, 0.25);
   color: #038c80;
+  border: 1px solid rgba(4, 168, 154, 0.3);
 }
 
 .badge-on-hold {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.15);
 }
 
 .badge-danger {
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .badge-pending {
   background: rgba(245, 158, 11, 0.15);
   color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 /* Stats */

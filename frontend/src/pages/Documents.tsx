@@ -230,7 +230,7 @@ export function Documents() {
     };
 
     const getStatusBadge = (status: string) => {
-        return status === 'SUBMITTED' ? 'badge-completed' : 'badge-on-hold';
+        return status === 'SUBMITTED' ? 'badge-active' : '';
     };
 
     const getStatusLabel = (status: string) => {
@@ -240,11 +240,7 @@ export function Documents() {
     };
 
     const getTypeBadge = (type: string) => {
-        if (type === 'INVOICE') return 'badge-active';
-        if (type === 'REPORT') return 'badge-completed';
-        if (type === 'DRAWING') return 'badge-pending';
-        if (type === 'LETTER') return 'badge-on-hold';
-        return '';
+        return 'badge-active';
     };
 
     const getTypeLabel = (type: string) => {
