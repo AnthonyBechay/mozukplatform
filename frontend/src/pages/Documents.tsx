@@ -230,13 +230,30 @@ export function Documents() {
     };
 
     const getStatusBadge = (status: string) => {
-        return status === 'SUBMITTED' ? 'badge-active' : 'badge-on-hold';
+        return status === 'SUBMITTED' ? 'badge-completed' : 'badge-on-hold';
+    };
+
+    const getStatusLabel = (status: string) => {
+        if (status === 'SUBMITTED') return 'Submitted';
+        if (status === 'NOT_SUBMITTED') return 'Not Submitted';
+        return status;
     };
 
     const getTypeBadge = (type: string) => {
         if (type === 'INVOICE') return 'badge-active';
         if (type === 'REPORT') return 'badge-completed';
-        return 'badge';
+        if (type === 'DRAWING') return 'badge-pending';
+        if (type === 'LETTER') return 'badge-on-hold';
+        return '';
+    };
+
+    const getTypeLabel = (type: string) => {
+        if (type === 'INVOICE') return 'Invoice';
+        if (type === 'REPORT') return 'Report';
+        if (type === 'DRAWING') return 'Drawing';
+        if (type === 'LETTER') return 'Letter';
+        if (type === 'OTHERS') return 'Others';
+        return type;
     };
 
     if (loading) {
@@ -296,12 +313,12 @@ export function Documents() {
                                         <td>{doc.project.name}</td>
                                         <td>
                                             <span className={`badge ${getTypeBadge(doc.documentType)}`}>
-                                                {doc.documentType}
+                                                {getTypeLabel(doc.documentType)}
                                             </span>
                                         </td>
                                         <td>
                                             <span className={`badge ${getStatusBadge(doc.documentStatus)}`}>
-                                                {doc.documentStatus.replace('_', ' ')}
+                                                {getStatusLabel(doc.documentStatus)}
                                             </span>
                                         </td>
                                         <td>{formatDate(doc.documentDate)}</td>
