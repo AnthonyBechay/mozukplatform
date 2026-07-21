@@ -7,6 +7,7 @@ import { ClientDetail } from './pages/ClientDetail';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { Documents } from './pages/Documents';
+import { Payments } from './pages/Payments';
 import { Layout } from './components/Layout';
 
 export function App() {
@@ -46,6 +47,7 @@ export function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/documents" element={<Documents />} />
+        <Route path="/payments" element={<Payments />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>

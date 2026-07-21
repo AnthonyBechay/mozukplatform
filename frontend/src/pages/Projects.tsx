@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -30,6 +31,11 @@ export function Projects() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [projectIdSuffix, setProjectIdSuffix] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -48,7 +54,70 @@ export function Projects() {
 
   useEffect(() => { load(); }, []);
 
+  // Auto-increment project ID suffix when client is selected
+  useEffect(() => {
+    if (!editing && form.clientId && clients.length > 0 && projects.length >= 0) {
+      // Find all projects for this client
+      const clientProjects = projects.filter(p => p.client.id === form.clientId);
+
+      console.log('=== AUTO-INCREMENT DEBUG ===');
+      console.log('Selected client ID:', form.clientId);
+      console.log('ALL CLIENTS:');
+      clients.forEach(c => {
+        console.log(`  - ${c.name} | DB ID: ${c.id} | Custom ID: ${c.customId}`);
+      });
+      const selectedClient = clients.find(c => c.id === form.clientId);
+      console.log('SELECTED CLIENT:', selectedClient ? `${selectedClient.name} | DB ID: ${selectedClient.id} | Custom ID: ${selectedClient.customId}` : 'NONE');
+      console.log('Total projects loaded:', projects.length);
+      console.log('ALL PROJECTS:');
+      projects.forEach(p => {
+        console.log(`  - ${p.projectId} | Client DB ID: ${p.client?.id} | Client Custom ID: ${p.client?.customId}`);
+      });
+      console.log('Client projects found:', clientProjects.length);
+      console.log('Client project IDs:', clientProjects.map(p => p.projectId));
+
+      // Extract project numbers from suffix after dash (e.g., "1001-003" -> 3)
+      const projectNumbers = clientProjects
+        .map(p => {
+          const match = p.projectId?.match(/-(\d+)$/);  // Match digits after last dash
+          const num = match ? parseInt(match[1], 10) : 0;
+          console.log(`  Project ${p.projectId} -> extracted number: ${num}`);
+          return num;
+        })
+        .filter(n => n > 0);
+
+      console.log('Extracted numbers:', projectNumbers);
+      console.log('Max number:', projectNumbers.length > 0 ? Math.max(...projectNumbers) : 0);
+
+      // Get next number
+      const nextNumber = projectNumbers.length > 0
+        ? Math.max(...projectNumbers) + 1
+        : 1;
+
+      console.log('Next number will be:', nextNumber);
+      console.log('=== END DEBUG ===');
+
+      // Set suffix (e.g., "001")
+      setProjectIdSuffix(String(nextNumber).padStart(3, '0'));
+    }
+  }, [form.clientId, editing, clients, projects]);  // Removed projectIdSuffix from dependencies!
+
+  // Auto-generate composite project ID when client or suffix changes
+  useEffect(() => {
+    if (!editing && form.clientId && clients.length > 0) {
+      const selectedClient = clients.find(c => c.id === form.clientId);
+      if (selectedClient) {
+        const clientId = selectedClient.customId || 'XXXX';
+        const fullProjectId = projectIdSuffix
+          ? `${clientId}-${projectIdSuffix}`
+          : `${clientId}-`;
+        setForm(prev => ({ ...prev, projectId: fullProjectId }));
+      }
+    }
+  }, [form.clientId, projectIdSuffix, clients, editing]);
+
   const openNew = () => {
+    setProjectIdSuffix('');
     setForm({
       name: '',
       description: '',
@@ -133,7 +202,7 @@ export function Projects() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map((p) => (
+                {projects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((p) => (
                   <tr key={p.id}>
                     <td>
                       <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
@@ -161,6 +230,31 @@ export function Projects() {
         )}
       </div>
 
+      {/* Pagination Controls */}
+      {projects.length > itemsPerPage && (
+        <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            <ChevronLeft size={16} /> Previous
+          </button>
+          <span style={{ color: '#888' }}>
+            Page <strong style={{ color: '#fff' }}>{currentPage}</strong> of {Math.ceil(projects.length / itemsPerPage)}
+          </span>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setCurrentPage(p => Math.min(Math.ceil(projects.length / itemsPerPage), p + 1))}
+            disabled={currentPage === Math.ceil(projects.length / itemsPerPage)}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+          >
+            Next <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
       {showForm && (
         <Modal
           title={editing ? 'Edit Project' : 'New Project'}
@@ -174,7 +268,17 @@ export function Projects() {
         >
           <div className="form-group">
             <label className="form-label">Client *</label>
-            <select className="form-input" value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })}>
+            <select
+              className="form-input"
+              value={form.clientId}
+              onChange={(e) => setForm({ ...form, clientId: e.target.value })}
+              disabled={editing}
+              style={editing ? {
+                backgroundColor: '#2a2a2a',
+                color: '#888',
+                cursor: 'not-allowed'
+              } : {}}
+            >
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -186,7 +290,52 @@ export function Projects() {
           </div>
           <div className="form-group">
             <label className="form-label">Project ID</label>
-            <input className="form-input" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} placeholder="Optional unique identifier" />
+            {!editing && form.clientId && clients.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Client ID - locked/greyed */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={(() => {
+                    const selectedClient = clients.find((c: Client) => c.id === form.clientId);
+                    return selectedClient ? (selectedClient.customId || 'XXXX') : '';
+                  })()}
+                  readOnly
+                  placeholder="Client ID"
+                  style={{
+                    flex: '1',
+                    backgroundColor: '#2a2a2a',
+                    color: '#888',
+                    cursor: 'not-allowed',
+                    textAlign: 'center'
+                  }}
+                />
+                <span style={{ color: '#888', fontSize: '20px', fontWeight: 'bold' }}>-</span>
+
+                {/* Project Suffix - editable */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={projectIdSuffix}
+                  onChange={(e) => setProjectIdSuffix(e.target.value)}
+                  placeholder="Project #"
+                  style={{ flex: '1', textAlign: 'center' }}
+                />
+              </div>
+            ) : (
+              <input
+                className="form-input"
+                value={form.projectId}
+                onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+                placeholder={editing ? "Project ID" : "Select a client first"}
+                readOnly={!editing}
+                style={!editing ? {
+                  backgroundColor: '#2a2a2a',
+                  color: '#888',
+                  cursor: 'not-allowed'
+                } : {}}
+              />
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Description</label>

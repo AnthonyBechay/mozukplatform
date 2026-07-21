@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
-import { FileText, Plus, X, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { FileText, Plus, X, Edit2, Trash2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Document {
     id: string;
@@ -41,6 +41,10 @@ export function Documents() {
     const [editing, setEditing] = useState<Document | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [documentIdSuffix, setDocumentIdSuffix] = useState('');
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [formData, setFormData] = useState({
         projectId: '',
         documentId: '',
@@ -76,6 +80,30 @@ export function Documents() {
         }
     };
 
+    // Auto-increment document ID suffix when project is selected
+    useEffect(() => {
+        if (!editing && formData.projectId && documentIdSuffix === '' && documents.length >= 0) {
+            // Find all documents for this project
+            const projectDocuments = documents.filter((d: Document) => d.projectId === formData.projectId);
+
+            // Extract document numbers from suffix after last dash (e.g., "1001-002-05" -> 5)
+            const docNumbers = projectDocuments
+                .map((d: Document) => {
+                    const match = d.documentId?.match(/-(\d+)$/);  // Match digits after last dash
+                    return match ? parseInt(match[1], 10) : 0;
+                })
+                .filter((n: number) => n > 0);
+
+            // Get next number
+            const nextNumber = docNumbers.length > 0
+                ? Math.max(...docNumbers) + 1
+                : 1;
+
+            // Set suffix (e.g., "01")
+            setDocumentIdSuffix(String(nextNumber).padStart(2, '0'));
+        }
+    }, [formData.projectId, editing, documents, documentIdSuffix]);
+
     // Auto-generate composite document ID when project or suffix changes
     useEffect(() => {
         if (!editing && formData.projectId && projects.length > 0) {
@@ -84,8 +112,8 @@ export function Documents() {
                 const clientId = selectedProject.client.customId || 'XXXX';
                 const projId = selectedProject.projectId || 'XXXX';
                 const fullDocId = documentIdSuffix
-                    ? `${clientId}-${projId}-${documentIdSuffix}`
-                    : `${clientId}-${projId}-`;
+                    ? `${projId}-${documentIdSuffix}`
+                    : `${projId}-`;
                 setFormData(prev => ({ ...prev, documentId: fullDocId }));
             }
         }
@@ -202,13 +230,26 @@ export function Documents() {
     };
 
     const getStatusBadge = (status: string) => {
-        return status === 'SUBMITTED' ? 'badge-active' : 'badge-on-hold';
+        return status === 'SUBMITTED' ? 'badge-active' : '';
+    };
+
+    const getStatusLabel = (status: string) => {
+        if (status === 'SUBMITTED') return 'Submitted';
+        if (status === 'NOT_SUBMITTED') return 'Not Submitted';
+        return status;
     };
 
     const getTypeBadge = (type: string) => {
-        if (type === 'INVOICE') return 'badge-active';
-        if (type === 'REPORT') return 'badge-completed';
-        return 'badge';
+        return 'badge-active';
+    };
+
+    const getTypeLabel = (type: string) => {
+        if (type === 'INVOICE') return 'Invoice';
+        if (type === 'REPORT') return 'Report';
+        if (type === 'DRAWING') return 'Drawing';
+        if (type === 'LETTER') return 'Letter';
+        if (type === 'OTHERS') return 'Others';
+        return type;
     };
 
     if (loading) {
@@ -261,19 +302,19 @@ export function Documents() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {documents.map((doc) => (
+                                {documents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((doc) => (
                                     <tr key={doc.id}>
                                         <td>{doc.documentId || '-'}</td>
                                         <td>{doc.documentName}</td>
                                         <td>{doc.project.name}</td>
                                         <td>
                                             <span className={`badge ${getTypeBadge(doc.documentType)}`}>
-                                                {doc.documentType}
+                                                {getTypeLabel(doc.documentType)}
                                             </span>
                                         </td>
                                         <td>
                                             <span className={`badge ${getStatusBadge(doc.documentStatus)}`}>
-                                                {doc.documentStatus.replace('_', ' ')}
+                                                {getStatusLabel(doc.documentStatus)}
                                             </span>
                                         </td>
                                         <td>{formatDate(doc.documentDate)}</td>
@@ -330,6 +371,31 @@ export function Documents() {
                 )}
             </div>
 
+            {/* Pagination Controls */}
+            {documents.length > itemsPerPage && (
+                <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '20px' }}>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                        <ChevronLeft size={16} /> Previous
+                    </button>
+                    <span style={{ color: '#888' }}>
+                        Page <strong style={{ color: '#fff' }}>{currentPage}</strong> of {Math.ceil(documents.length / itemsPerPage)}
+                    </span>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => setCurrentPage(p => Math.min(Math.ceil(documents.length / itemsPerPage), p + 1))}
+                        disabled={currentPage === Math.ceil(documents.length / itemsPerPage)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                        Next <ChevronRight size={16} />
+                    </button>
+                </div>
+            )}
+
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal">
@@ -362,8 +428,8 @@ export function Documents() {
                                         value={formData.projectId}
                                         onChange={handleChange}
                                         required
-                                        disabled={editing || (formData.projectId && documentIdSuffix !== '')}
-                                        style={editing || (formData.projectId && documentIdSuffix !== '') ? {
+                                        disabled={editing}
+                                        style={editing ? {
                                             backgroundColor: '#2a2a2a',
                                             color: '#888',
                                             cursor: 'not-allowed'
@@ -372,7 +438,7 @@ export function Documents() {
                                         <option value="">Select a project</option>
                                         {projects.map((p) => (
                                             <option key={p.id} value={p.id}>
-                                                {p.name}
+                                                {p.projectId ? `${p.projectId} - ${p.name}` : p.name}
                                             </option>
                                         ))}
                                     </select>
@@ -408,7 +474,9 @@ export function Documents() {
                                                 className="form-input"
                                                 value={(() => {
                                                     const selectedProject = projects.find((p: Project) => p.id === formData.projectId);
-                                                    return selectedProject ? (selectedProject.projectId || 'XXXX') : '';
+                                                    if (!selectedProject || !selectedProject.projectId) return '';
+                                                    const parts = selectedProject.projectId.split('-');
+                                                    return parts.length > 1 ? parts[parts.length - 1] : selectedProject.projectId;
                                                 })()}
                                                 readOnly
                                                 placeholder="Project ID"
@@ -484,6 +552,8 @@ export function Documents() {
                                     >
                                         <option value="INVOICE">Invoice</option>
                                         <option value="REPORT">Report</option>
+                                        <option value="DRAWING">Drawing</option>
+                                        <option value="LETTER">Letter</option>
                                         <option value="OTHERS">Others</option>
                                     </select>
                                 </div>

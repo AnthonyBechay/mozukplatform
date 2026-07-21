@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Modal } from '../components/Modal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Plus, Pencil, Trash2, ChevronRight, FolderKanban } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronRight, FolderKanban, DollarSign } from 'lucide-react';
 
 interface Document {
   id: string;
@@ -42,6 +42,7 @@ export function ClientDetail() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [projectIdSuffix, setProjectIdSuffix] = useState('');
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -68,7 +69,40 @@ export function ClientDetail() {
 
   useEffect(() => { load(); }, [id]);
 
+  // Auto-increment project ID suffix when client is loaded
+  useEffect(() => {
+    if (client && projectIdSuffix === '' && client.projects) {
+      // Extract project numbers from suffix after dash (e.g., "1001-003" -> 3)
+      const projectNumbers = client.projects
+        .map((p: any) => {
+          const match = p.projectId?.match(/-(\d+)$/);  // Match digits after last dash
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter((n: number) => n > 0);
+
+      // Get next number
+      const nextNumber = projectNumbers.length > 0
+        ? Math.max(...projectNumbers) + 1
+        : 1;
+
+      // Set suffix (e.g., "001")
+      setProjectIdSuffix(String(nextNumber).padStart(3, '0'));
+    }
+  }, [client, projectIdSuffix]);
+
+  // Auto-generate composite project ID when client or suffix changes
+  useEffect(() => {
+    if (client && projectIdSuffix !== undefined) {
+      const clientId = client.customId || 'XXXX';
+      const fullProjectId = projectIdSuffix
+        ? `${clientId}-${projectIdSuffix}`
+        : `${clientId}-`;
+      setForm(prev => ({ ...prev, projectId: fullProjectId }));
+    }
+  }, [client, projectIdSuffix]);
+
   const openNew = () => {
+    setProjectIdSuffix('');
     setForm({
       name: '',
       description: '',
@@ -98,8 +132,9 @@ export function ClientDetail() {
   if (!client) return null;
 
   const statusBadge = (status: string) => {
-    const cls = status === 'active' ? 'badge-active' : status === 'completed' ? 'badge-completed' : 'badge-on-hold';
-    return <span className={`badge ${cls}`}>{status}</span>;
+    const cls = status === 'ON_GOING' ? 'badge-on-hold' : status === 'COMPLETE_SOLVED' ? 'badge-completed' : status === 'COMPLETE_NOT_SOLVED' ? 'badge-active' : 'badge-danger';
+    const label = status === 'ON_GOING' ? 'On Going' : status === 'COMPLETE_SOLVED' ? 'Complete Solved' : status === 'COMPLETE_NOT_SOLVED' ? 'Complete Not Solved' : status === 'CANCELLED' ? 'Cancelled' : status;
+    return <span className={`badge ${cls}`}>{label}</span>;
   };
 
   // Calculate financial totals for each project
@@ -111,6 +146,23 @@ export function ClientDetail() {
       .reduce((sum, doc) => sum + (doc.amount || 0), 0);
     const balance = totalInvoice - totalPaid;
     return { totalInvoice, totalPaid, balance };
+  };
+
+  // Calculate grand totals
+  const grandTotals = client?.projects.reduce((acc, project) => {
+    const financials = getProjectFinancials(project.id);
+    return {
+      totalInvoice: acc.totalInvoice + financials.totalInvoice,
+      totalPaid: acc.totalPaid + financials.totalPaid,
+      balance: acc.balance + financials.balance
+    };
+  }, { totalInvoice: 0, totalPaid: 0, balance: 0 }) || { totalInvoice: 0, totalPaid: 0, balance: 0 };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
   return (
@@ -139,6 +191,30 @@ export function ClientDetail() {
         </div>
       )}
 
+      {/* Financial Overview Row */}
+      <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <DollarSign size={20} color="#04a89a" /> Financial Overview
+      </h3>
+      <div className="stats-grid" style={{ marginBottom: '24px' }}>
+        <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(4, 168, 154, 0.1) 0%, rgba(4, 168, 154, 0.05) 100%)', borderColor: 'rgba(4, 168, 154, 0.2)' }}>
+          <div className="stat-label">Total Amount</div>
+          <div className="stat-value" style={{ color: '#04a89a' }}>{formatCurrency(grandTotals.totalInvoice)}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Across {client.projects.length} projects</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Paid Balance</div>
+          <div className="stat-value">{formatCurrency(grandTotals.totalPaid)}</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Collected payments</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Remaining Balance</div>
+          <div className="stat-value" style={{ color: grandTotals.balance > 0 ? '#ef4444' : '#64748b' }}>
+            {formatCurrency(grandTotals.balance)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Pending payments</div>
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-header">Projects ({client.projects.length})</div>
         {client.projects.length === 0 ? (
@@ -151,12 +227,13 @@ export function ClientDetail() {
             <table>
               <thead>
                 <tr>
+                  <th>Project ID</th>
                   <th>Name</th>
                   <th>Status</th>
                   <th>Description</th>
-                  <th>Total Invoice</th>
-                  <th>Total Paid</th>
-                  <th>Balance</th>
+                  <th>Total Amount</th>
+                  <th>Paid Balance</th>
+                  <th>Remaining</th>
                   <th style={{ width: 80 }}>Actions</th>
                 </tr>
               </thead>
@@ -164,21 +241,26 @@ export function ClientDetail() {
                 {client.projects.map((p) => {
                   const financials = getProjectFinancials(p.id);
                   return (
-                    <tr key={p.id}>
+                    <tr 
+                      key={p.id}
+                      onClick={() => navigate(`/projects/${p.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.projectId || '—'}</td>
                       <td>
-                        <a onClick={() => navigate(`/projects/${p.id}`)} style={{ cursor: 'pointer', fontWeight: 500 }}>
+                        <span style={{ fontWeight: 500 }}>
                           {p.name}
-                        </a>
+                        </span>
                       </td>
                       <td>{statusBadge(p.status)}</td>
-                      <td style={{ color: '#64748b' }}>{p.description || '—'}</td>
-                      <td>${financials.totalInvoice.toFixed(2)}</td>
-                      <td>${financials.totalPaid.toFixed(2)}</td>
+                      <td style={{ color: '#64748b' }}>{p.description ? (p.description.length > 50 ? p.description.substring(0, 50) + '...' : p.description) : '—'}</td>
+                      <td>{formatCurrency(financials.totalInvoice)}</td>
+                      <td>{formatCurrency(financials.totalPaid)}</td>
                       <td style={{ color: financials.balance > 0 ? '#ef4444' : '#04a89a', fontWeight: 500 }}>
-                        ${financials.balance.toFixed(2)}
+                        {formatCurrency(financials.balance)}
                       </td>
                       <td>
-                        <button className="btn-icon danger" onClick={() => setDeleting(p)}>
+                        <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); setDeleting(p); }}>
                           <Trash2 size={15} />
                         </button>
                       </td>
@@ -208,7 +290,48 @@ export function ClientDetail() {
           </div>
           <div className="form-group">
             <label className="form-label">Project ID</label>
-            <input className="form-input" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} placeholder="Optional unique identifier" />
+            {client ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* Client ID - locked/greyed */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={client.customId || 'XXXX'}
+                  readOnly
+                  placeholder="Client ID"
+                  style={{
+                    flex: '1',
+                    backgroundColor: '#2a2a2a',
+                    color: '#888',
+                    cursor: 'not-allowed',
+                    textAlign: 'center'
+                  }}
+                />
+                <span style={{ color: '#888', fontSize: '20px', fontWeight: 'bold' }}>-</span>
+
+                {/* Project Suffix - editable */}
+                <input
+                  type="text"
+                  className="form-input"
+                  value={projectIdSuffix}
+                  onChange={(e) => setProjectIdSuffix(e.target.value)}
+                  placeholder="Project #"
+                  style={{ flex: '1', textAlign: 'center' }}
+                />
+              </div>
+            ) : (
+              <input
+                className="form-input"
+                value={form.projectId}
+                readOnly
+                placeholder="Loading client..."
+                style={{
+                  backgroundColor: '#2a2a2a',
+                  color: '#888',
+                  cursor: 'not-allowed'
+                }}
+              />
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Description</label>

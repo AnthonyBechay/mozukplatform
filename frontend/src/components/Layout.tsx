@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, FileText, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, FileText, DollarSign, LogOut } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +14,7 @@ export function Layout({ children, onLogout }: LayoutProps) {
     { to: '/clients', icon: Users, label: 'Clients' },
     { to: '/projects', icon: FolderKanban, label: 'Projects' },
     { to: '/documents', icon: FileText, label: 'Documents' },
+    { to: '/payments', icon: DollarSign, label: 'Payments' },
   ];
 
   return (

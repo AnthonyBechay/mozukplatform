@@ -10,7 +10,7 @@ router.get('/', async (_req, res) => {
   try {
     const clients = await prisma.client.findMany({
       include: { _count: { select: { projects: true } } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { customId: 'asc' },
     });
     res.json(clients);
   } catch {
