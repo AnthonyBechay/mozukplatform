@@ -18,7 +18,9 @@ async function request(path: string, options: RequestInit = {}) {
       options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }
     ),
   });
-  if (res.status === 401) {
+  // A 401 from the login call itself means wrong credentials: surface the error
+  // instead of reloading the page (which wiped the form and hid the message).
+  if (res.status === 401 && path !== '/auth/login') {
     localStorage.removeItem('token');
     window.location.href = '/login';
     throw new Error('Unauthorized');

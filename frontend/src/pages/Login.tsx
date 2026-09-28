@@ -42,6 +42,8 @@ export function Login({ onLogin }: LoginProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@mozuk.net"
+              autoCapitalize="none"
+              autoComplete="username"
               required
             />
           </div>
@@ -53,6 +55,7 @@ export function Login({ onLogin }: LoginProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"
+              autoComplete="current-password"
               required
             />
           </div>
